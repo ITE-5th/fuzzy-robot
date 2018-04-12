@@ -5,6 +5,14 @@ from fuzzy_controller.fuzzy_controller import FuzzyController
 
 class ObstacleAvoidanceController(FuzzyController):
 
+    def inputs(self, dl, df, dr, a, p, ed):
+        return {
+            "input_dl": dl,
+            "input_df": df,
+            "input_dr": dr,
+            "input_a": a
+        }
+
     def build_rules(self):
         return [
             ctrl.Rule(self.input_dl['N'] & self.input_df['N'] & self.input_dr['F'], self.output_u['S']),

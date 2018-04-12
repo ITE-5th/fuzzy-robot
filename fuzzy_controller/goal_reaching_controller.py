@@ -4,6 +4,13 @@ from fuzzy_controller.fuzzy_controller import FuzzyController
 
 
 class GoalReachingController(FuzzyController):
+
+    def inputs(self, dl, df, dr, a, p, ed):
+        return {
+            "input_p": p,
+            "input_a": a
+        }
+
     def build_rules(self):
         return [
             ctrl.Rule(self.input_p['N'] & self.input_a['Z'], self.output_u['S']),
