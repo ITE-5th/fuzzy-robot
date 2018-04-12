@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-import numpy as np
+
 import skfuzzy.control as ctrl
 from skfuzzy.control.controlsystem import CrispValueCalculator
 
@@ -31,9 +31,15 @@ class FuzzyController(metaclass=ABCMeta):
 class MfMapping:
     # not working
     def __init__(self, x, mfx):
-        self.indices = {t: i for i, t in enumerate(x)}
+        self.x = x
         self.mfx = mfx
-        print(self.mfx)
+        self.x_indices = {t: i for i, t in enumerate(self.x)}
+        self.mfx_indices = {t: i for i, t in enumerate(self.mfx)}
 
-    def find(self, x):
-        return self.mfx[self.indices[x]]
+    def find_mfx(self, x):
+        temp = self.x_indices[x]
+        return self.mfx[temp]
+
+    def find_x(self, mfx):
+        temp = self.mfx_indices[mfx]
+        return self.x[temp]

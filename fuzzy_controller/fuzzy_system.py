@@ -1,6 +1,8 @@
+import random
+
 import numpy as np
 import skfuzzy.control as ctrl
-from platypus import NSGAII, Problem, Subset
+from platypus import NSGAII, Problem, Subset, Type
 from skfuzzy.membership import *
 
 from fuzzy_controller.goal_reaching_controller import GoalReachingController
@@ -65,15 +67,15 @@ class FuzzySystem:
         return u, w
 
     def u_function(self, x):
-        return [self.u1.find(x[0]), self.u2.find(x[0]), self.u3.find(x[0])]
+        return [self.u1.find_mfx(x[0]), self.u2.find_mfx(x[0]), self.u3.find_mfx(x[0])]
 
     def w_function(self, x):
-        return [self.w1.find(x[0]), self.w2.find(x[0]), self.w3.find(x[0])]
+        return [self.w1.find_mfx(x[0]), self.w2.find_mfx(x[0]), self.w3.find_mfx(x[0])]
 
     def build_problems(self):
         u_problem, w_problem = Problem(1, 3), Problem(1, 3)
-        u_problem.types[:] = Subset(self.output_u.universe, len(self.output_u.universe))
-        w_problem.types[:] = Subset(self.output_w.universe, len(self.output_w.universe))
+        u_problem.types[:] = Subspace(self.output_u.universe)
+        w_problem.types[:] = Subspace(self.output_w.universe)
         u_problem.function, w_problem.function = self.u_function, self.w_function
         return u_problem, w_problem
 
@@ -127,3 +129,13 @@ class FuzzySystem:
         output_w["PO"] = gaussmf(output_w.universe, 1.8, 0.6)
         output_w["LPO"] = smf(output_w.universe, 1.5, 4)
         return output_u, output_w
+
+
+class Subspace(Type):
+    def __init__(self, elements):
+        super().__init__()
+        self.elements = elements
+        self.length = len(self.elements)
+
+    def rand(self):
+        return self.elements[random.randint(0, self.length - 1)]
