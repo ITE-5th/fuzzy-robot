@@ -4,6 +4,7 @@ import time
 import RPi.GPIO as GPIO
 import pigpio
 
+from fuzzy_controller.fuzzy_system import FuzzySystem
 from misc.motor_controller import QuadMotorController
 from misc.range_sensor import sensor
 
@@ -111,7 +112,10 @@ def auto_movement():
     global status, x_min, x_max, x, y, fb_speed, lr_speed, area
     last_turn = 'L'
     no_object_loops = 0
+    fuzzy_system = FuzzySystem()
     while True:
+        # todo
+        # u, w = fuzzy_system.run()
         if status == run:
             no_object_loops = 0
 
@@ -183,8 +187,8 @@ def print_status(area, fb_speed, is_left, is_right, lr_speed):
 
 
 if __name__ == '__main__':
-
     try:
+
         range_sensor_thread = threading.Thread(target=range_sensor_updater)
         auto_movement_thread = threading.Thread(target=auto_movement)
         # range_sensor_thread.start()

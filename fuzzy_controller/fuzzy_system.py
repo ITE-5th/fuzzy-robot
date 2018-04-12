@@ -1,17 +1,16 @@
 import numpy as np
 import skfuzzy.control as ctrl
-from platypus import NSGAII, Problem
-from platypus import Subset
 from skfuzzy.membership import *
 
 from fuzzy_controller.goal_reaching_controller import GoalReachingController
 from fuzzy_controller.local_minimum_avoidance_controller import LocalMinimunAvoidanceController
 from fuzzy_controller.obstacle_avoidance_controller import ObstacleAvoidanceController
-from misc.lexicographic import Lexicographic
+from solver.lexicographic_solver import LexicographicSolver
+from solver.multi_objective_optimization_solver import MultiObjectiveOptimizationSolver
 
 
 class FuzzySystem:
-    def __init__(self, use_lex=False):
+    def __init__(self):
         self.step = 0.001
         self.input_dl, self.input_df, self.input_dr, self.input_a, self.input_p, self.input_ed = self.build_inputs()
         self.output_u, self.output_w = self.build_outputs()
@@ -24,69 +23,21 @@ class FuzzySystem:
         self.gr_controller = GoalReachingController(self.input_dl, self.input_df, self.input_dr, self.input_a,
                                                     self.input_p, self.input_ed, self.output_u,
                                                     self.output_w)
-        self.u1, self.w1 = None, None
-        self.u2, self.w2 = None, None
-        self.u3, self.w3 = None, None
-        self.use_lex = use_lex
+        self.lex_solver = LexicographicSolver()
+        self.moo_solver = MultiObjectiveOptimizationSolver(self.output_u, self.output_w)
 
-    def run(self, dl, df, dr, a, p, ed):
-        # temp = {"input_dl": dl, "input_df": df, "input_dr": dr, "input_a": a, "input_p": p, "input_ed": ed}
-        self.u1, self.w1 = self.oa_controller.compute(dl, df, dr, a, p, ed)
-        self.u2, self.w2 = self.lma_controller.compute(dl, df, dr, a, p, ed)
-        self.u3, self.w3 = self.gr_controller.compute(dl, df, dr, a, p, ed)
-        if self.use_lex:
-            return self.solve_lexicographic()
-        return self.solve_problems()
-
-    def solve_lexicographic(self):
-        w1, u1 = self.w1.mfx.max(), self.u1.mfx.max()
-        w2, u2 = self.w2.mfx.max(), self.u2.mfx.max()
-        w3, u3 = self.w3.mfx.max(), self.u3.mfx.max()
-
-        a = Lexicographic([w1, u1], maximize=[True, False])
-        b = Lexicographic([w2, u2], maximize=[True, False])
-        c = Lexicographic([w3, u3], maximize=[True, False])
-
-        if a > b:
-            return self.w1.find_x(w1), self.u1.find_x(u1)
-
-        if b > c:
-            return self.w2.find_x(w2), self.u2.find_x(u2)
-
-        return self.w3.find_x(w3), self.u3.find_x(u3)
-
-    def solve_problems(self):
-        u_problem, w_problem = self.build_problems()
-        algorithm = NSGAII(u_problem)
-        algorithm.run(1000)
-        u = algorithm.result[0].objectives
-        algorithm = NSGAII(w_problem)
-        algorithm.run(1000)
-        w = algorithm.result[0].objectives
-        return u, w
-
-    def u_function(self, x):
-        x = x[0][0]
-        return [self.u1.find_mfx(x), self.u2.find_mfx(x), self.u3.find_mfx(x)]
-
-    def w_function(self, x):
-        x = x[0][0]
-        return [self.w1.find_mfx(x), self.w2.find_mfx(x), self.w3.find_mfx(x)]
-
-    def build_problems(self):
-        u_problem, w_problem = Problem(1, 3), Problem(1, 3)
-        u_problem.types[:] = Subset(self.output_u.universe, 1)
-        w_problem.types[:] = Subset(self.output_w.universe, 1)
-        u_problem.directions[:] = Problem.MAXIMIZE
-        w_problem.directions[:] = Problem.MAXIMIZE
-        u_problem.function, w_problem.function = self.u_function, self.w_function
-        return u_problem, w_problem
+    def run(self, dl, df, dr, a, p, ed, use_lex=True):
+        u1, w1 = self.oa_controller.compute(dl, df, dr, a, p, ed)
+        u2, w2 = self.lma_controller.compute(dl, df, dr, a, p, ed)
+        u3, w3 = self.gr_controller.compute(dl, df, dr, a, p, ed)
+        return self.lex_solver.solve(u1, u2, u3, w1, w2, w3) if use_lex else self.moo_solver.solve(u1, u2, u3, w1, w2,
+                                                                                                   w3)
 
     def build_inputs(self):
         input_dl = ctrl.Antecedent(np.arange(0, 4, self.step), "input_dl")  # meters
         input_df = ctrl.Antecedent(np.arange(0, 4, self.step), "input_df")  # meters
         input_dr = ctrl.Antecedent(np.arange(0, 4, self.step), "input_dr")  # meters
-        input_a = ctrl.Antecedent(np.arange(-4, +4, self.step), "input_a")  # rad
+        input_a = ctrl.Antecedent(np.arange(-4, 4, self.step), "input_a")  # rad
         input_p = ctrl.Antecedent(np.arange(0, 20, self.step), "input_p")  # meters
         input_ed = ctrl.Antecedent(np.arange(-1, 1, self.step), "input_ed")  # meters
 
@@ -124,7 +75,6 @@ class FuzzySystem:
         output_u["S"] = zmf(output_u.universe, 0.16, 0.6)
         output_u["M"] = gaussmf(output_u.universe, 0.5, 0.12)
         output_u["L"] = smf(output_u.universe, 0.42, 0.95)
-        # oa_u.view()
 
         output_w["LNO"] = zmf(output_w.universe, -4, -1.5)
         output_w["NO"] = gaussmf(output_w.universe, -1.8, 0.6)
