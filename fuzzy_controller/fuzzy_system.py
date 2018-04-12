@@ -1,6 +1,7 @@
 import numpy as np
 import skfuzzy.control as ctrl
-from platypus import NSGAII, Problem, PCX, Subset
+from platypus import NSGAII, Problem
+from platypus import Subset
 from skfuzzy.membership import *
 
 from fuzzy_controller.goal_reaching_controller import GoalReachingController
@@ -47,12 +48,12 @@ class FuzzySystem:
         c = Lexicographic([w3, u3], maximize=[True, False])
 
         if a > b:
-            return w1, u1
+            return self.w1.find_x(w1), self.u1.find_x(u1)
 
         if b > c:
-            return w2, u2
+            return self.w2.find_x(w2), self.u2.find_x(u2)
 
-        return w3, u3
+        return self.w3.find_x(w3), self.u3.find_x(u3)
 
     def solve_problems(self):
         u_problem, w_problem = self.build_problems()
