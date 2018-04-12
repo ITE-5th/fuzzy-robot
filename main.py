@@ -1,4 +1,4 @@
-from math import sqrt, atan2
+from math import sqrt
 
 from fuzzy_controller.fuzzy_system import FuzzySystem
 
@@ -41,4 +41,5 @@ if __name__ == '__main__':
     fuzzy_system = FuzzySystem()
     while True:
         u, w = fuzzy_system.run(dl, df, dr, a, p, ed)
-        print("done!")
+        print(f"u = {u}")
+        print(f"w = {w}")

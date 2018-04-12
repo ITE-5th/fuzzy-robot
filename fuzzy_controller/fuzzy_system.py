@@ -66,12 +66,12 @@ class FuzzySystem:
         return u, w
 
     def u_function(self, x):
-        x = x[0]
-        return [self.u1.find_mfx(x[0]), self.u2.find_mfx(x[0]), self.u3.find_mfx(x[0])]
+        x = x[0][0]
+        return [self.u1.find_mfx(x), self.u2.find_mfx(x), self.u3.find_mfx(x)]
 
     def w_function(self, x):
-        x = x[0]
-        return [self.w1.find_mfx(x[0]), self.w2.find_mfx(x[0]), self.w3.find_mfx(x[0])]
+        x = x[0][0]
+        return [self.w1.find_mfx(x), self.w2.find_mfx(x), self.w3.find_mfx(x)]
 
     def build_problems(self):
         u_problem, w_problem = Problem(1, 3), Problem(1, 3)
