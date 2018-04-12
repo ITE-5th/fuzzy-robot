@@ -1,6 +1,7 @@
 from abc import ABCMeta, abstractmethod
 
 import skfuzzy.control as ctrl
+from skfuzzy import defuzz
 
 
 class FuzzyController(metaclass=ABCMeta):
@@ -10,9 +11,13 @@ class FuzzyController(metaclass=ABCMeta):
         self.controller = ctrl.ControlSystem(self.build_rules())
         self.controller = ctrl.ControlSystemSimulation(self.controller)
 
+
     @abstractmethod
     def build_rules(self):
         raise NotImplementedError()
 
     def compute(self, inputs):
         self.controller.inputs(inputs)
+        self.controller.compute()
+        # :/
+        return None, None
