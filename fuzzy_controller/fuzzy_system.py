@@ -52,7 +52,7 @@ class FuzzySystem:
         return [self.w1(x[0]), self.w2(x[0]), self.w3(x[0])]
 
     def build_problems(self):
-        u_problem, w_problem = Problem(1, cpu_count()), Problem(1, cpu_count())
+        u_problem, w_problem = Problem(1, 3), Problem(1, 3)
         u_problem.types[:] = Real(0, 2)
         w_problem.types[:] = Real(-5, 5)
         u_problem.function, w_problem.function = self.u_function, self.w_function
