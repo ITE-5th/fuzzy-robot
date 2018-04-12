@@ -1,0 +1,45 @@
+import skfuzzy.control as ctrl
+
+from fuzzy_controller.fuzzy_controller import FuzzyController
+
+
+class LocalMinimunAvoidanceController(FuzzyController):
+    def build_rules(self):
+        return [
+            ctrl.Rule(self.input_dl['N'] & self.input_df['N'] & self.input_dr['N'] & self.input_a['Z'],
+                      self.output_u['S']),
+            ctrl.Rule(self.input_dl['N'] & self.input_df['N'] & self.input_dr['N'] & self.input_a['Z'],
+                      self.output_w['PO']),
+            ctrl.Rule(self.input_dl['F'] & self.input_df['N'] & self.input_dr['N'] & self.input_a['P'],
+                      self.output_u['M']),
+            ctrl.Rule(self.input_dl['F'] & self.input_df['N'] & self.input_dr['N'] & self.input_a['P'],
+                      self.output_w['PO']),
+            ctrl.Rule(self.input_dl['F'] & self.input_df['N'] & self.input_dr['N'] & self.input_a['LP'],
+                      self.output_u['S']),
+            ctrl.Rule(self.input_dl['F'] & self.input_df['N'] & self.input_dr['N'] & self.input_a['LP'],
+                      self.output_w['LPO']),
+            ctrl.Rule(
+                self.input_dl['F'] & self.input_df['F'] & self.input_dr['N'] & self.input_ed['PT'] & self.input_a['P'],
+                self.output_u['M']),
+            ctrl.Rule(
+                self.input_dl['F'] & self.input_df['F'] & self.input_dr['N'] & self.input_ed['PT'] & self.input_a['P'],
+                self.output_w['ZO']),
+            ctrl.Rule(
+                self.input_dl['F'] & self.input_df['F'] & self.input_dr['N'] & self.input_ed['PT'] & self.input_a['LP'],
+                self.output_u['M']),
+            ctrl.Rule(
+                self.input_dl['F'] & self.input_df['F'] & self.input_dr['N'] & self.input_ed['PT'] & self.input_a['LP'],
+                self.output_w['ZO']),
+            ctrl.Rule(
+                self.input_dl['F'] & self.input_df['F'] & self.input_dr['F'] & self.input_ed['PT'] & self.input_a['P'],
+                self.output_u['M']),
+            ctrl.Rule(
+                self.input_dl['F'] & self.input_df['F'] & self.input_dr['F'] & self.input_ed['PT'] & self.input_a['P'],
+                self.output_w['ZO']),
+            ctrl.Rule(
+                self.input_dl['F'] & self.input_df['F'] & self.input_dr['F'] & self.input_ed['PT'] & self.input_a['LP'],
+                self.output_u['M']),
+            ctrl.Rule(
+                self.input_dl['F'] & self.input_df['F'] & self.input_dr['F'] & self.input_ed['PT'] & self.input_a['LP'],
+                self.output_w['LNO']),
+        ]
