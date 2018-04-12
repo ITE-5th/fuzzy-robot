@@ -1,9 +1,6 @@
 from math import sqrt, atan2
 
-import numpy as np
-import skfuzzy.control as ctrl
-from skfuzzy.control import ControlSystem
-from skfuzzy.membership import *
+from fuzzy_controller.fuzzy_system import FuzzySystem
 
 step = 0.001
 

@@ -1,6 +1,10 @@
+from multiprocessing import cpu_count
+
 import numpy as np
 import skfuzzy.control as ctrl
+from platypus import NSGAII, Problem, Real
 from skfuzzy.membership import *
+
 from fuzzy_controller.goal_reaching_controller import GoalReachingController
 from fuzzy_controller.local_minimum_avoidance_controller import LocalMinimunAvoidanceController
 from fuzzy_controller.obstacle_avoidance_controller import ObstacleAvoidanceController
@@ -29,7 +33,27 @@ class FuzzySystem:
             {"input_dl": dl, "input_df": df, "input_dr": dr, "input_a": a, "input_p": p, "input_ed": ed})
         # not yet :3
         self.controller.compute()
-        return None, None
+        u_problem, w_problem = self.build_problems()
+        algorithm = NSGAII(u_problem)
+        algorithm.run(1000)
+        u = algorithm.result[0].objectives
+        algorithm = NSGAII(w_problem)
+        algorithm.run(1000)
+        w = algorithm.result[0].objectives
+        return u, w
+
+    def u_function(self, x):
+        return []
+
+    def w_function(self, x):
+        return []
+
+    def build_problems(self):
+        u_problem, w_problem = Problem(1, cpu_count()), Problem(1, cpu_count())
+        u_problem.types[:] = Real(0, 2)
+        w_problem.types[:] = Real(-5, 5)
+        u_problem.function, w_problem.function = self.u_function, self.w_function
+        return u_problem, w_problem
 
     def build_inputs(self):
         input_dl = ctrl.Antecedent(np.arange(0, 4, self.step), "input_dl")  # meters
