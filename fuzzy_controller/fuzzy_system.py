@@ -6,6 +6,7 @@ from skfuzzy.membership import *
 from fuzzy_controller.goal_reaching_controller import GoalReachingController
 from fuzzy_controller.local_minimum_avoidance_controller import LocalMinimunAvoidanceController
 from fuzzy_controller.obstacle_avoidance_controller import ObstacleAvoidanceController
+from misc.lexicographic import Lexicographic
 
 
 class FuzzySystem:
@@ -33,9 +34,25 @@ class FuzzySystem:
         self.u2, self.w2 = self.lma_controller.compute(dl, df, dr, a, p, ed)
         self.u3, self.w3 = self.gr_controller.compute(dl, df, dr, a, p, ed)
         if self.use_lex:
-            # ?
-            return None
+            return self.solve_lexicographic()
         return self.solve_problems()
+
+    def solve_lexicographic(self):
+        w1, u1 = self.w1.mfx.max(), self.u1.mfx.max()
+        w2, u2 = self.w1.mfx.max(), self.u1.mfx.max()
+        w3, u3 = self.w1.mfx.max(), self.u1.mfx.max()
+
+        a = Lexicographic([w1, u1], maximize=[True, False])
+        b = Lexicographic([w2, u2], maximize=[True, False])
+        c = Lexicographic([w3, u3], maximize=[True, False])
+
+        if a > b:
+            return w1, u1
+
+        if b > c:
+            return w2, u2
+
+        return w3, u3
 
     def solve_problems(self):
         u_problem, w_problem = self.build_problems()
