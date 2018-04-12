@@ -1,6 +1,6 @@
 import numpy as np
 import skfuzzy.control as ctrl
-from platypus import NSGAII, Problem, Real, Subset
+from platypus import NSGAII, Problem, Subset
 from skfuzzy.membership import *
 
 from fuzzy_controller.goal_reaching_controller import GoalReachingController
@@ -9,7 +9,7 @@ from fuzzy_controller.obstacle_avoidance_controller import ObstacleAvoidanceCont
 
 
 class FuzzySystem:
-    def __init__(self):
+    def __init__(self, use_max=True):
         self.step = 0.001
         self.input_dl, self.input_df, self.input_dr, self.input_a, self.input_p, self.input_ed = self.build_inputs()
         self.output_u, self.output_w = self.build_outputs()
@@ -25,12 +25,17 @@ class FuzzySystem:
         self.u1, self.w1 = None, None
         self.u2, self.w2 = None, None
         self.u3, self.w3 = None, None
+        self.use_max = use_max
 
     def run(self, dl, df, dr, a, p, ed):
         temp = {"input_dl": dl, "input_df": df, "input_dr": dr, "input_a": a, "input_p": p, "input_ed": ed}
         self.u1, self.w1 = self.oa_controller.compute(temp)
         self.u2, self.w2 = self.lma_controller.compute(temp)
         self.u3, self.w3 = self.gr_controller.compute(temp)
+        if self.use_max:
+            return max(self.u1.mfx.max(), self.u2.mfx.max(), self.u3.mfx.max()), max(self.w1.mfx.max(),
+                                                                                     self.w2.mfx.max(),
+                                                                                     self.w3.mfx.max())
         return self.solve_problems()
 
     def solve_problems(self):
