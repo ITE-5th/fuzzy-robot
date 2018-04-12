@@ -29,6 +29,7 @@ class FuzzyController(metaclass=ABCMeta):
 
 
 class MfMapping:
+    # not working
     def __init__(self, x, mfx):
         self.indices = {t: i for i, t in enumerate(x)}
         self.mfx = mfx

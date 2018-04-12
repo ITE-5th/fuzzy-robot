@@ -39,8 +39,8 @@ class FuzzySystem:
 
     def solve_lexicographic(self):
         w1, u1 = self.w1.mfx.max(), self.u1.mfx.max()
-        w2, u2 = self.w1.mfx.max(), self.u1.mfx.max()
-        w3, u3 = self.w1.mfx.max(), self.u1.mfx.max()
+        w2, u2 = self.w2.mfx.max(), self.u2.mfx.max()
+        w3, u3 = self.w3.mfx.max(), self.u3.mfx.max()
 
         a = Lexicographic([w1, u1], maximize=[True, False])
         b = Lexicographic([w2, u2], maximize=[True, False])
