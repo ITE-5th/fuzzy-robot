@@ -1,6 +1,7 @@
 from abc import ABCMeta, abstractmethod
 
 import skfuzzy.control as ctrl
+from skfuzzy.control.controlsystem import CrispValueCalculator
 
 
 class FuzzyController(metaclass=ABCMeta):
@@ -17,5 +18,15 @@ class FuzzyController(metaclass=ABCMeta):
     def compute(self, inputs):
         self.controller.inputs(inputs)
         self.controller.compute()
-        # :/
-        return None, None
+        u_universe, mfu, _ = CrispValueCalculator(self.output_u, self.controller).find_memberships()
+        w_universe, mfw, _ = CrispValueCalculator(self.output_w, self.controller).find_memberships()
+        return MfMapping(u_universe, mfu), MfMapping(w_universe, mfw)
+
+
+class MfMapping:
+    def __init__(self, x, mfx):
+        self.indices = {t: i for i, t in enumerate(x)}
+        self.mfx = mfx
+
+    def find(self, x):
+        return self.mfx[self.indices[x]]
