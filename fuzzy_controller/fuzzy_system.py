@@ -33,6 +33,9 @@ class FuzzySystem:
             {"input_dl": dl, "input_df": df, "input_dr": dr, "input_a": a, "input_p": p, "input_ed": ed})
         # not yet :3
         self.controller.compute()
+        return self.solve_problems()
+
+    def solve_problems(self):
         u_problem, w_problem = self.build_problems()
         algorithm = NSGAII(u_problem)
         algorithm.run(1000)
