@@ -30,8 +30,9 @@ class FuzzySystem:
         u1, w1 = self.oa_controller.compute(dl, df, dr, a, p, ed)
         u2, w2 = self.lma_controller.compute(dl, df, dr, a, p, ed)
         u3, w3 = self.gr_controller.compute(dl, df, dr, a, p, ed)
-        return self.lex_solver.solve(u1, u2, u3, w1, w2, w3) if use_lex else self.moo_solver.solve(u1, u2, u3, w1, w2,
-                                                                                                   w3)
+        self.moo_solver.set_variables(u1, u2, u3, w1, w2, w3)
+        self.lex_solver.set_variables(u1, u2, u3, w1, w2, w3)
+        return self.lex_solver.solve() if use_lex else self.moo_solver.solve()
 
     def build_inputs(self):
         input_dl = ctrl.Antecedent(np.arange(0, 4, self.step), "input_dl")  # meters

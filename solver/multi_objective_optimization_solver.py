@@ -8,7 +8,7 @@ class MultiObjectiveOptimizationSolver(Solver):
         super().__init__()
         self.u_universe, self.w_universe = output_u.universe, output_w.universe
 
-    def solve(self, u1, u2, u3, w1, w2, w3):
+    def solve(self):
         u_problem, w_problem = self.build_problems()
         algorithm = NSGAII(u_problem)
         algorithm.run(1000)
