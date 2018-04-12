@@ -24,15 +24,15 @@ class FuzzySystem:
         self.gr_controller = GoalReachingController(self.input_dl, self.input_df, self.input_dr, self.input_a,
                                                     self.input_p, self.input_ed, self.output_u,
                                                     self.output_w)
-        self.controller = ctrl.ControlSystem(
-            self.oa_controller.rules + self.lma_controller.rules + self.gr_controller.rules)
-        self.controller = ctrl.ControlSystemSimulation(self.controller)
+        self.u1, self.w1 = None, None
+        self.u2, self.w2 = None, None
+        self.u3, self.w3 = None, None
 
     def run(self, dl, df, dr, a, p, ed):
-        self.controller.inputs(
-            {"input_dl": dl, "input_df": df, "input_dr": dr, "input_a": a, "input_p": p, "input_ed": ed})
-        # not yet :3
-        self.controller.compute()
+        temp = {"input_dl": dl, "input_df": df, "input_dr": dr, "input_a": a, "input_p": p, "input_ed": ed}
+        self.u1, self.w1 = self.oa_controller.compute(temp)
+        self.u2, self.w2 = self.lma_controller.compute(temp)
+        self.u3, self.w3 = self.gr_controller.compute(temp)
         return self.solve_problems()
 
     def solve_problems(self):
@@ -46,10 +46,10 @@ class FuzzySystem:
         return u, w
 
     def u_function(self, x):
-        return []
+        return [self.u1(x[0]), self.u2(x[0]), self.u3(x[0])]
 
     def w_function(self, x):
-        return []
+        return [self.w1(x[0]), self.w2(x[0]), self.w3(x[0])]
 
     def build_problems(self):
         u_problem, w_problem = Problem(1, cpu_count()), Problem(1, cpu_count())
