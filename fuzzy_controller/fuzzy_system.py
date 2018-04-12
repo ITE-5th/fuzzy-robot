@@ -27,7 +27,9 @@ class FuzzySystem:
     def run(self, dl, df, dr, a, p, ed):
         self.controller.inputs(
             {"input_dl": dl, "input_df": df, "input_dr": dr, "input_a": a, "input_p": p, "input_ed": ed})
+        # not yet :3
         self.controller.compute()
+        return None, None
 
     def build_inputs(self):
         input_dl = ctrl.Antecedent(np.arange(0, 4, self.step), "input_dl")  # meters

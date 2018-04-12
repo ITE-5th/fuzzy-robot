@@ -27,7 +27,7 @@ prev_p = 0
 a = atan2(y_d - y, x_d - x) - theta
 
 # the movement of the robot with the target, in [-1, 1]
-e_d = p - prev_p
+ed = p - prev_p
 
 # u Linear velocity, w angular velocity
 # u in [0, 1.3] m/s
@@ -39,3 +39,6 @@ dr = min(d[0], d[1], d[2])
 df = min(d[3], d[4])
 dl = min(d[5], d[6], d[7])
 
+fuzzy_system = FuzzySystem()
+while True:
+    u, w = fuzzy_system.run(dl, df, dr, a, p, ed)
