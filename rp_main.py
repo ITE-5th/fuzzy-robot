@@ -44,12 +44,6 @@ a = None
 # ro
 p = 0
 
-# linear velocity
-u = None
-
-# angular velocity
-w = None
-
 motor_status = 'stop'
 
 
@@ -175,20 +169,25 @@ def success():
 def auto_movement():
     global status
     fuzzy_system = FuzzySystem()
+
     while status == run:
         if success():
             status = STOP
         u, w = fuzzy_system.run(dl, df, dr, a, p, ed)
+        # linear velocity
         if u > 0:
             forward = map(u, 0, 2, 0, 100)
             forwards(forward)
+            time.sleep(0.3)
+
+        # angular velocity
         if w != 0:
             lr_speed = map(w, -4, 4, -100, 100)
             if lr_speed > 0:
                 turnright(lr_speed)
             else:
                 turnleft(lr_speed)
-        time.sleep(0.3)
+                time.sleep(0.3)
 
 
 def print_status(area, fb_speed, is_left, is_right, lr_speed):
