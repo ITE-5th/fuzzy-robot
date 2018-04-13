@@ -26,6 +26,7 @@ MANUAL = 'Manual'
 
 status = run
 
+goal_threshold = 0.5
 # position
 # x , y , theta
 position = {'x': 5, 'y': 5, 'theta': 5,
@@ -34,7 +35,7 @@ position = {'x': 5, 'y': 5, 'theta': 5,
 # range sensor value
 dl = None
 df = None
-dm = None
+dr = None
 
 ed = None
 
@@ -78,7 +79,7 @@ def range_updater():
 
 
 def position_updater():
-    global position, p
+    global position, p, ed, alpha
     while status == run:
         try:
             acceleration, gyro, temp = gyro_sensor.get_all_data()
@@ -87,15 +88,16 @@ def position_updater():
             position['thetaD'] = gyro['z']
 
             # ro at i+1
-            pi = numpy.sqrt(
+            pi_current = numpy.sqrt(
                 (position['xd'] - position['x']) ** 2 +
                 (position['yd'] - position['y']) ** 2
             )
             alpha = numpy.arctan(
                 (position['yd'] - position['y']) /
                 (position['xd'] - position['x'])) - position['theta']
-            ed = pi - p
-            p = pi
+            ed = pi_current - p
+            p = pi_current
+            time.sleep(0.1)
         except Exception as e:
             print(e)
     return
@@ -164,12 +166,29 @@ def map(value, istart, istop, ostart, ostop):
     return ostart + (ostop - ostart) * ((value - istart) / (istop - istart))
 
 
+def success():
+    current_pos = numpy.array((position['x'], position['y'], position['theta']))
+    target_pos = numpy.array((position['xd'], position['yd'], position['thetaD']))
+    return numpy.linalg.norm(target_pos - current_pos) > goal_threshold
+
+
 def auto_movement():
     global status
     fuzzy_system = FuzzySystem()
     while status == run:
-        # todo
-        u, w = fuzzy_system.run()
+        if success():
+            status = STOP
+        u, w = fuzzy_system.run(dl, df, dr, a, p, ed)
+        if u > 0:
+            forward = map(u, 0, 2, 0, 100)
+            forwards(forward)
+        if w != 0:
+            lr_speed = map(w, -4, 4, -100, 100)
+            if lr_speed > 0:
+                turnright(lr_speed)
+            else:
+                turnleft(lr_speed)
+        time.sleep(0.3)
 
 
 def print_status(area, fb_speed, is_left, is_right, lr_speed):
