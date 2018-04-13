@@ -206,11 +206,14 @@ if __name__ == '__main__':
 
         range_sensor_thread = threading.Thread(target=range_updater)
         auto_movement_thread = threading.Thread(target=auto_movement)
-        # range_sensor_thread.start()
+        position_updater_thread = threading.Thread(target=position_updater)
+        range_sensor_thread.start()
         auto_movement_thread.start()
+        position_updater_thread.start()
 
         #  Join Thread to Stop together
-        # range_sensor_thread.join()
+        range_sensor_thread.join()
+        position_updater_thread.join()
         auto_movement_thread.join()
 
     finally:
