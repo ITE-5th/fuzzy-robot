@@ -2,50 +2,99 @@ import threading
 import time
 
 import RPi.GPIO as GPIO
+import numpy
 import pigpio
+from mpu6050 import mpu6050
 
 from fuzzy_controller.fuzzy_system import FuzzySystem
 from misc.motor_controller import QuadMotorController
-from misc.range_sensor import sensor
+from misc.range_sensor import UltraSonicSensors
+
+# init controllers
+motor_controller = QuadMotorController()
+
+gyro_sensor = mpu6050(0x68)
+pi = pigpio.pi()
+
+l_range_sensors_pins = {(23, 24)}
+f_range_sensors_pins = {(23, 24)}
+r_range_sensors_pins = {(23, 24)}
 
 run = 'Running'
 STOP = 'Stopped'
 MANUAL = 'Manual'
 
-fb_speed = 0
-lr_speed = 0
+status = run
 
-x = 500
-y = 0
-area = 7000
-x_min = 200
-x_max = 800
+goal_threshold = 0.5
+# position
+# x , y , theta
+position = {'x': 5, 'y': 5, 'theta': 5,
+            'xd': 0, 'yd': 0, 'thetaD': 0}
 
-motor_controller = QuadMotorController()
+# range sensor value
+dl = None
+df = None
+dr = None
 
-no_object = "no_object"
+ed = None
+
+a = None
+
+# ro
+p = 0
+
 motor_status = 'stop'
 
 
-def range_sensor_updater():
-    global range_sensor_value
+def range_updater():
+    global dl, df, dr
     print('range Sensor thread is running')
-    pi = pigpio.pi()
-    sonar = sensor(pi, trigger=23, echo=24)
-    while True:
+
+    # init range sensors
+
+    l_range_sensors = UltraSonicSensors(pi, l_range_sensors_pins)
+    f_range_sensors = UltraSonicSensors(pi, f_range_sensors_pins)
+    r_range_sensors = UltraSonicSensors(pi, r_range_sensors_pins)
+
+    while status == run:
         try:
-            sonar.trigger()
+            dl = l_range_sensors.update()
+            df = f_range_sensors.update()
+            dr = r_range_sensors.update()
             time.sleep(0.1)
-            cms, new = sonar.get_centimetres()
-            range_sensor_value = 100
-            # if new:
-            #     range_sensor_value = cms
-            #     # print('range : {}'.format(range_sensor_value))
         except Exception as e:
             print('range Sensor thread is stopped')
             print(e)
-            sonar.cancel()
+            l_range_sensors.cancel()
+            f_range_sensors.cancel()
+            r_range_sensors.cancel()
             pi.stop()
+
+
+def position_updater():
+    global position, p, ed, alpha
+    while status == run:
+        try:
+            acceleration, gyro, temp = gyro_sensor.get_all_data()
+            position['x'] += acceleration['x']
+            position['y'] += acceleration['y']
+            position['thetaD'] = gyro['z']
+
+            # ro at i+1
+            pi_current = numpy.sqrt(
+                (position['xd'] - position['x']) ** 2 +
+                (position['yd'] - position['y']) ** 2
+            )
+            alpha = numpy.arctan(
+                (position['yd'] - position['y']) /
+                (position['xd'] - position['x'])) - position['theta']
+            ed = pi_current - p
+            p = pi_current
+            time.sleep(0.1)
+        except Exception as e:
+            print(e)
+    return
 
 
 def reverse(m_speed=None):
@@ -57,20 +106,19 @@ def reverse(m_speed=None):
         motor_controller.move_backward(back_speed=m_speed)
     # setLEDs(1, 0, 0, 1)
     # print('straight')
-    except:
+    except Exception as e:
         motor_controller = QuadMotorController()
+        print(e)
 
 
 def forwards(m_speed=None):
     global motor_controller, motor_status
     try:
         motor_status = 'forward'
-        if range_sensor_value > 30:
-            motor_controller.move_forward(forward_speed=m_speed)
-        else:
-            print('RANGE SENSOR : {} cm'.format(range_sensor_value))
-    except:
+        motor_controller.move_forward(forward_speed=m_speed)
+    except Exception as e:
         motor_controller = QuadMotorController()
+        print(e)
 
 
 def turnright(m_speed=None):
@@ -78,8 +126,9 @@ def turnright(m_speed=None):
     try:
         motor_status = 'right'
         motor_controller.move_right(right_speed=m_speed)
-    except:
+    except Exception as e:
         motor_controller = QuadMotorController()
+        print(e)
 
 
 def turnleft(m_speed=None):
@@ -87,8 +136,9 @@ def turnleft(m_speed=None):
     try:
         motor_status = 'left'
         motor_controller.move_left(left_speed=m_speed)
-    except:
+    except Exception as e:
         motor_controller = QuadMotorController()
+        print(e)
 
 
 def stopall(force=False):
@@ -99,8 +149,10 @@ def stopall(force=False):
         else:
             motor_controller.move_left(left_speed=0)
         motor_status = 'stop'
-    except:
+
+    except Exception as e:
         motor_controller = QuadMotorController()
+        print(e)
 
 
 # Helper Function
@@ -108,71 +160,34 @@ def map(value, istart, istop, ostart, ostop):
     return ostart + (ostop - ostart) * ((value - istart) / (istop - istart))
 
 
+def success():
+    current_pos = numpy.array((position['x'], position['y'], position['theta']))
+    target_pos = numpy.array((position['xd'], position['yd'], position['thetaD']))
+    return numpy.linalg.norm(target_pos - current_pos) > goal_threshold
+
+
 def auto_movement():
-    global status, x_min, x_max, x, y, fb_speed, lr_speed, area
-    last_turn = 'L'
-    no_object_loops = 0
+    global status
     fuzzy_system = FuzzySystem()
-    while True:
-        # todo
-        # u, w = fuzzy_system.run()
-        if status == run:
-            no_object_loops = 0
 
-            # Calculate PID updates
+    while status == run:
+        if success():
+            status = STOP
+        u, w = fuzzy_system.run(dl, df, dr, a, p, ed)
+        # linear velocity
+        if u > 0:
+            forward = map(u, 0, 2, 0, 100)
+            forwards(forward)
+            time.sleep(0.3)
 
-            fb_update = fb_pid.update(area)
-            fb_speed = percentage(fb_update, fb_pid.target)
-            #
-            is_forward = fb_speed > 20
-            is_backward = fb_speed < -20
-
-            fb_speed = max(0, min(100, abs(int(fb_speed))))
-            fb_speed = int(map(fb_speed, 0, 100, 0, 100))
-
-            lr_update = lr_pid.update(x)
-            lr_speed = percentage(lr_update, lr_pid.target)
-            #
-            is_left = lr_speed > 30
-            is_right = lr_speed < -30
-            #
-            lr_speed = max(0, min(100, abs(int(lr_speed))))
-            lr_speed = int(map(lr_speed, 0, 100, 0, 75))
-
-            print_status(area, fb_speed, is_left, is_right, lr_speed)
-
-            if is_left:
-                turnleft(m_speed=lr_speed)
-                x += 100 * (lr_speed / 100)
-                last_turn = 'L'
-            elif is_right:
-                turnright(m_speed=lr_speed)
-                x -= 100 * (lr_speed / 100)
-                last_turn = 'R'
-            elif is_forward:
-                forwards(m_speed=fb_speed)
-                area += 400 * (fb_speed / 100)
-            elif is_backward:
-                reverse(m_speed=fb_speed)
-                area -= 400 * (fb_speed / 100)
-
-            if no_obj_flag and not is_left and not is_right and not is_forward and not is_backward:
-                status = no_object
-            time.sleep(0.05)
-            stopall()
-        elif status == no_object:
-            print('********** No Object **********')
-            if no_object_loops < 10:
-                no_object_loops += 1
-                if last_turn == 'R':
-                    turnright(m_speed=50)
-                else:
-                    turnleft(m_speed=50)
-                time.sleep(0.1)
-                stopall()
-                time.sleep(0.5)
-        else:
-            time.sleep(1)
+        # angular velocity
+        if w != 0:
+            lr_speed = map(w, -4, 4, -100, 100)
+            if lr_speed > 0:
+                turnright(lr_speed)
+            else:
+                turnleft(lr_speed)
+                time.sleep(0.3)
 
 
 def print_status(area, fb_speed, is_left, is_right, lr_speed):
@@ -189,13 +204,16 @@ def print_status(area, fb_speed, is_left, is_right, lr_speed):
 if __name__ == '__main__':
     try:
 
-        range_sensor_thread = threading.Thread(target=range_sensor_updater)
+        range_sensor_thread = threading.Thread(target=range_updater)
         auto_movement_thread = threading.Thread(target=auto_movement)
-        # range_sensor_thread.start()
+        position_updater_thread = threading.Thread(target=position_updater)
+        range_sensor_thread.start()
         auto_movement_thread.start()
+        position_updater_thread.start()
 
         #  Join Thread to Stop together
-        # range_sensor_thread.join()
+        range_sensor_thread.join()
+        position_updater_thread.join()
         auto_movement_thread.join()
 
     finally:

@@ -51,6 +51,30 @@ class sensor:
         self._cb.cancel()
 
 
+class UltraSonicSensors:
+    def __init__(self, pi, sensors_pins):
+        self.range_sensors = []
+        for i in sensors_pins:
+            self.range_sensors.append(sensor(pi, trigger=i[1], echo=i[2]))
+
+        self.sensor_count = len(self.range_sensors)
+
+    def update(self):
+        temp = float('Inf')
+        for rs in self.range_sensors:
+            distance, is_new = rs.get_centimetres()
+            if distance < temp:
+                temp = distance
+        return temp
+
+    def cancel(self):
+        for rs in self.range_sensors:
+            try:
+                rs.cancel()
+            except Exception as e:
+                print(e)
+
+
 if __name__ == "__main__":
 
     pi = pigpio.pi()
