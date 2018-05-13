@@ -3,6 +3,7 @@
 # HC_SR04.py
 # 2015-08-06
 # Public Domain
+import os
 import time
 
 import pigpio
@@ -55,14 +56,17 @@ class UltraSonicSensors:
     def __init__(self, pi, sensors_pins):
         self.range_sensors = []
         for i in sensors_pins:
-            self.range_sensors.append(sensor(pi, trigger=i[1], echo=i[2]))
+            self.range_sensors.append(sensor(pi, trigger=i[0], echo=i[1]))
 
         self.sensor_count = len(self.range_sensors)
 
     def update(self):
         temp = float('Inf')
         for rs in self.range_sensors:
+            rs.trigger()
+            time.sleep(0.01)
             distance, is_new = rs.get_centimetres()
+            print('current distance :' + str(distance))
             if distance < temp:
                 temp = distance
         return temp
@@ -79,19 +83,50 @@ if __name__ == "__main__":
 
     pi = pigpio.pi()
 
-    sonar = sensor(pi, trigger=23, echo=24)
+    r_sensors_pins = {
+        # R
+        (23, 24),
+        (23, 22),
+        (23, 27),
+    }
+    f_sensors_pins = {
+        # F
+        (23, 17),
+        (23, 4),
+    }
 
-    end = time.time() + 1000.0
+    l_sensors_pins = {
+        # L
+        (23, 18),
+        (23, 25),
+        (23, 12),
+
+    }
+
+    l_range_sensors = UltraSonicSensors(pi, l_sensors_pins)
+    f_range_sensors = UltraSonicSensors(pi, f_sensors_pins)
+    r_range_sensors = UltraSonicSensors(pi, r_sensors_pins)
+
+    # sonar = sensor(pi, trigger=23, echo=24)
+
+    end = time.time() + 10.0
 
     r = 1
     while time.time() < end:
-        sonar.trigger()
-        time.sleep(0.1)
-        cms, new = sonar.get_centimetres()
-        print("{} {:.1f} {}".format(r, cms, new))
-        r += 1
+        os.system('clear')
+        # time.sleep(0.1)
 
-    sonar.cancel()
+        print('Min L: ' + str(l_range_sensors.update()))
+        # print('Min F: ' + str(f_range_sensors.update()))
+        # print('Min R: ' + str(r_range_sensors.update()))
+        time.sleep(0.1)
+
+        # sonar.trigger()
+        # cms, new = sonar.get_centimetres()
+        # print("{} {:.1f} {}".format(r, cms, new))
+        # r += 1
+
+    # sonar.cancel()
 
     pi.stop()
 
