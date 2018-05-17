@@ -3,7 +3,7 @@ import skfuzzy.control as ctrl
 from fuzzy_controller.fuzzy_controller import FuzzyController
 
 
-class LocalMinimunAvoidanceController(FuzzyController):
+class LocalMinimumAvoidanceController(FuzzyController):
 
     def inputs(self, dl, df, dr, a, p, ed):
         return {

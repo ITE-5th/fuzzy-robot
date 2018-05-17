@@ -33,7 +33,7 @@ if __name__ == '__main__':
     # w in [-4.3, 4.3] rad/s
 
     # distance to obstacles measured by sensor i
-    d = [1, 2, 3, 4, 5, 6, 7, 8]
+    d = [3, 3, 3, 3, 3, 3, 3, 3]
     dr = min(d[0], d[1], d[2])
     df = min(d[3], d[4])
     dl = min(d[5], d[6], d[7])

@@ -3,7 +3,7 @@ import skfuzzy.control as ctrl
 from skfuzzy.membership import *
 
 from fuzzy_controller.goal_reaching_controller import GoalReachingController
-from fuzzy_controller.local_minimum_avoidance_controller import LocalMinimunAvoidanceController
+from fuzzy_controller.local_minimum_avoidance_controller import LocalMinimumAvoidanceController
 from fuzzy_controller.obstacle_avoidance_controller import ObstacleAvoidanceController
 from solver.lexicographic_solver import LexicographicSolver
 from solver.multi_objective_optimization_solver import MultiObjectiveOptimizationSolver
@@ -17,7 +17,7 @@ class FuzzySystem:
         self.oa_controller = ObstacleAvoidanceController(self.input_dl, self.input_df, self.input_dr, self.input_a,
                                                          self.input_p, self.input_ed,
                                                          self.output_u, self.output_w)
-        self.lma_controller = LocalMinimunAvoidanceController(self.input_dl, self.input_df, self.input_dr, self.input_a,
+        self.lma_controller = LocalMinimumAvoidanceController(self.input_dl, self.input_df, self.input_dr, self.input_a,
                                                               self.input_p, self.input_ed,
                                                               self.output_u, self.output_w)
         self.gr_controller = GoalReachingController(self.input_dl, self.input_df, self.input_dr, self.input_a,
