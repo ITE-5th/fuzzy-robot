@@ -19,8 +19,19 @@ class FuzzyController(metaclass=ABCMeta):
     def inputs(self, dl, df, dr, a, p, ed):
         raise NotImplementedError()
 
+    def validate(self, values):
+        for key, value in values.items():
+            x = getattr(self, key)
+            universe = x.universe
+            maxi, mini = universe.max(), universe.min()
+            if not (mini <= value <= maxi):
+                return False
+        return True
+
     def compute(self, dl, df, dr, a, p, ed):
         temp = self.inputs(dl, df, dr, a, p, ed)
+        if not self.validate(temp):
+            return None, None
         self.controller.inputs(temp)
         self.controller.compute()
         u_universe, mfu, _ = CrispValueCalculator(self.output_u, self.controller).find_memberships()
