@@ -12,10 +12,10 @@ if __name__ == '__main__':
     L = 0.265
 
     # robot position and orientation
-    x, y, theta = 1000, 2000, 90
+    x, y, theta = 10, 10, 90
 
     # target position and orientation
-    x_d, y_d, theta_d = 5000, 10000, 20
+    x_d, y_d, theta_d = 12, 12, 20
 
     # Distance from the center of the robot to the target, in [0, 20]
     p = sqrt(pow(x_d - x, 2) + pow(y_d - y, 2))
@@ -37,16 +37,8 @@ if __name__ == '__main__':
     dr = min(d[0], d[1], d[2])
     df = min(d[3], d[4])
     dl = min(d[5], d[6], d[7])
-    print(dl)
-    print(df)
-    print(dr)
-    print(a)
-    print(p)
-    print(ed)
-
+    use_lex = False
     fuzzy_system = FuzzySystem()
     while True:
-        # u, w = fuzzy_system.run(dl, df, dr, a, p, ed)
-        u, w = fuzzy_system.run(3.62, 4.0, 3.69, 0, 0, 1)
-        print(f"u = {u}")
-        print(f"w = {w}")
+        u, w = fuzzy_system.run(dl, df, dr, a, p, ed, use_lex=False)
+        print(f"u = {u}, w = {w}")

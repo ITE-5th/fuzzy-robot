@@ -10,8 +10,8 @@ from solver.multi_objective_optimization_solver import MultiObjectiveOptimizatio
 
 
 class FuzzySystem:
-    def __init__(self):
-        self.step = 0.001
+    def __init__(self, step=0.001, iterations=1000):
+        self.step = step
         self.input_dl, self.input_df, self.input_dr, self.input_a, self.input_p, self.input_ed = self.build_inputs()
         self.output_u, self.output_w = self.build_outputs()
         self.oa_controller = ObstacleAvoidanceController(self.input_dl, self.input_df, self.input_dr, self.input_a,
@@ -24,7 +24,7 @@ class FuzzySystem:
                                                     self.input_p, self.input_ed, self.output_u,
                                                     self.output_w)
         self.lex_solver = LexicographicSolver()
-        self.moo_solver = MultiObjectiveOptimizationSolver(self.output_u, self.output_w)
+        self.moo_solver = MultiObjectiveOptimizationSolver(self.output_u, self.output_w, iterations)
 
     def run(self, dl, df, dr, a, p, ed, use_lex=True):
         u1, w1 = self.oa_controller.compute(dl, df, dr, a, p, ed)
@@ -71,7 +71,7 @@ class FuzzySystem:
 
     def build_outputs(self):
         output_u = ctrl.Consequent(np.arange(0, 2, self.step), "output_u")  # m/s
-        output_w = ctrl.Consequent(np.arange(-5, +5, self.step), "output_w")  # rad/s
+        output_w = ctrl.Consequent(np.arange(-5, 5, self.step), "output_w")  # rad/s
 
         output_u["S"] = zmf(output_u.universe, 0.16, 0.6)
         output_u["M"] = gaussmf(output_u.universe, 0.5, 0.12)
