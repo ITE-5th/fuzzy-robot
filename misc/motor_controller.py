@@ -3,7 +3,10 @@
 """
 import time
 
-from AMSpi import AMSpi
+try:
+    from misc.AMSpi import AMSpi
+except:
+    from AMSpi import AMSpi
 
 
 class QuadMotorController:
@@ -20,14 +23,14 @@ class QuadMotorController:
         self._AMSPI.set_L293D_pins(L293D_pins[0], L293D_pins[1], L293D_pins[2], L293D_pins[3])
 
     def move_forward(self, forward_speed=None):
-        print("GO: clockwise")
+        print("GO: Forward")
         self._AMSPI.run_dc_motors(
             [self._AMSPI.DC_Motor_1, self._AMSPI.DC_Motor_2, self._AMSPI.DC_Motor_3, self._AMSPI.DC_Motor_4],
             speed=forward_speed)
         return True
 
     def move_backward(self, back_speed=None):
-        print("GO: counterclockwise")
+        print("GO: Backward")
         self._AMSPI.run_dc_motors(
             [self._AMSPI.DC_Motor_1, self._AMSPI.DC_Motor_2, self._AMSPI.DC_Motor_3, self._AMSPI.DC_Motor_4],
             clockwise=False,
@@ -39,7 +42,7 @@ class QuadMotorController:
         self._AMSPI.run_dc_motors([self._AMSPI.DC_Motor_3, self._AMSPI.DC_Motor_4], speed=right_speed)
 
     def move_left(self, left_speed=None):
-        print("Turn left")
+        print("Turn left" if left_speed != 0 else '')
         self._AMSPI.run_dc_motors([self._AMSPI.DC_Motor_1, self._AMSPI.DC_Motor_2], speed=left_speed)
         self._AMSPI.run_dc_motors([self._AMSPI.DC_Motor_3, self._AMSPI.DC_Motor_4], speed=left_speed, clockwise=False)
 
