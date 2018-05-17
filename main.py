@@ -41,5 +41,4 @@ if __name__ == '__main__':
     fuzzy_system = FuzzySystem()
     while True:
         u, w = fuzzy_system.run(dl, df, dr, a, p, ed, use_lex=False)
-        print(f"u = {u}")
-        print(f"w = {w}")
+        print(f"u = {u}, w = {w}")
