@@ -1,5 +1,4 @@
 import argparse
-import json
 import os
 import socket
 import threading
@@ -11,14 +10,13 @@ import RPi.GPIO as GPIO
 import numpy
 import pigpio
 
-from fuzzy_controller.fuzzy_system import FuzzySystem
 from misc.connection_helper import ConnectionHelper
 from misc.motor_controller import QuadMotorController
 from misc.range_sensor import UltraSonicSensors
 
 # init controllers
 motor_controller = QuadMotorController()
-fuzzy_system = FuzzySystem()
+# fuzzy_system = FuzzySystem()
 socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 pi = pigpio.pi()
@@ -192,6 +190,13 @@ def movement():
 
     while True:
         try:
+            dl = max(min(dl, 4), 0)
+            df = max(min(df, 4), 0)
+            dr = max(min(dr, 4), 0)
+            alpha = max(min(alpha, 4), -4)
+            p = max(min(p, 20), 0)
+            ed = max(min(ed, 1), -1)
+
             message = {
                 "dl": dl,
                 "df": df,
@@ -204,45 +209,44 @@ def movement():
             ConnectionHelper.send_json(socket, message)
             result = ConnectionHelper.receive_json(socket)
 
-            result = result.decode("utf-8")
             print("Got >>", result)
-            json_message = json.loads(result)
 
             if "u" in result and "w" in result:
-                u = json_message.get("u")
-                w = json_message.get("w")
+                u = result["u"]
+                w = result["w"]
 
             if "status" in result:
-                status = json_message.get("status")
+                status = result["status"]
                 print(f"action: {status}")
                 if status == STOP:
                     # stop = True
                     stopall()
 
-            FB = json_message.get("FB")
+            if 'FB' in result or 'LR' in result:
 
-            LR = json_message.get("LR")
+                FB = result["FB"]
+                LR = result["LR"]
 
-            manual_speed = 50
-            # print FB + " " + LR + str(len(FB)) + str(len(LR))
-            if FB == "F":
-                forwards(m_speed=manual_speed)
-                pass
-            elif FB == "B":
-                reverse(m_speed=manual_speed)
-                pass
+                manual_speed = 50
+                # print FB + " " + LR + str(len(FB)) + str(len(LR))
+                if FB == "F":
+                    forwards(m_speed=manual_speed)
+                    pass
+                elif FB == "B":
+                    reverse(m_speed=manual_speed)
+                    pass
 
-            elif LR == "L":
-                turnleft(m_speed=manual_speed)
-                pass
+                elif LR == "L":
+                    turnleft(m_speed=manual_speed)
+                    pass
 
-            elif LR == "R":
-                turnright(m_speed=manual_speed)
-                pass
+                elif LR == "R":
+                    turnright(m_speed=manual_speed)
+                    pass
 
-            elif LR == "S" or FB == "S":
-                # print 'stop'
-                stopall()
+                elif LR == "S" or FB == "S":
+                    # print 'stop'
+                    stopall()
         except Exception as e:
             print(e)
             print(traceback.format_exc())
@@ -280,15 +284,6 @@ def auto_movement():
 
     while status == run and not success():
         try:
-            print('{} {} {} {} {} {}'.format(dl, df, dr, alpha, p, ed))
-
-            dl = max(min(dl, 4), 0)
-            df = max(min(df, 4), 0)
-            dr = max(min(dr, 4), 0)
-            alpha = max(min(alpha, 4), -4)
-            p = max(min(p, 20), 0)
-            ed = max(min(ed, 1), -1)
-            u, w = fuzzy_system.run(dl, df, dr, alpha, p, ed, use_lex=False)
 
             fb_speed = 0
 
@@ -327,6 +322,8 @@ def auto_movement():
             p = p_current
             print(p_current)
             print(alpha)
+            u = 0
+            w = 0
             # print_status(position, fb_speed, lr_speed, dl, df, dr)
         except Exception as e:
             print(e)
@@ -388,18 +385,21 @@ if __name__ == '__main__':
             status = STOP
 
         range_sensor_thread = threading.Thread(target=range_updater)
-        fuzzy_thread = threading.Thread(target=do_fuzzy)
+        # fuzzy_thread = threading.Thread(target=do_fuzzy)
         auto_movement_thread = threading.Thread(target=auto_movement)
         simulation_timer_thread = threading.Thread(target=simulation_timer)
         print_thread = threading.Thread(target=print_status)
+        movement_thread = threading.Thread(target=movement)
 
         range_sensor_thread.start()
+        movement_thread.start()
         # fuzzy_thread.start()
-        simulation_timer_thread.start()
         auto_movement_thread.start()
         print_thread.start()
+        simulation_timer_thread.start()
 
         #  Join Threads to Stop together
+        movement_thread.join()
         range_sensor_thread.join()
         # fuzzy_thread.join()
         auto_movement_thread.join()
