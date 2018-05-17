@@ -1,5 +1,5 @@
 from fuzzy_controller.fuzzy_system import FuzzySystem
-from server.connection_helper import ConnectionHelper
+from misc.connection_helper import ConnectionHelper
 
 
 class RequestHandler:

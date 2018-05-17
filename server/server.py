@@ -2,7 +2,10 @@ import os
 import socket
 import threading
 
-from server.request_handler import RequestHandler
+try:
+    from request_handler import RequestHandler
+except:
+    from server.request_handler import RequestHandler
 
 
 class LocalServer:
@@ -25,7 +28,7 @@ class LocalServer:
             print('Accepted connection from {}:{}'.format(address[0], address[1]))
             client_handler = threading.Thread(
                 target=self.handle_client_connection,
-                args=(client_socket,)
+                args=(client_socket)
             )
             client_handler.start()
 
@@ -35,8 +38,8 @@ class LocalServer:
 
 if __name__ == '__main__':
     os.system('ps -fA | grep python | tail -n1 | awk \'{ print $3 }\'|xargs kill')
-    server = LocalServer(port=9999)
-    # server = LocalServer(host="192.168.43.71", port=8888)
+    # server = LocalServer(port=9999)
+    server = LocalServer(host="192.168.1.7", port=8888)
     try:
         server.start()
     finally:

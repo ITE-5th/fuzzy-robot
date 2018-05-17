@@ -29,7 +29,7 @@ class ConnectionHelper:
         try:
             serialized = pickle.dumps(object)
         except (TypeError, ValueError) as e:
-            raise Exception('You can only send JSON-serializable data')
+            raise Exception('You can only send Pickle-serializable data')
         # send the length of the serialized data first
         socket.send('%d\n'.encode() % len(serialized))
         # send the serialized data
@@ -41,7 +41,7 @@ class ConnectionHelper:
         try:
             deserialized = pickle.loads(view)
         except (TypeError, ValueError) as e:
-            raise Exception('Data received was not in JSON format')
+            raise Exception('Data received was not in Pickle format')
         return deserialized
 
     @staticmethod

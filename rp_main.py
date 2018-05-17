@@ -1,3 +1,7 @@
+import argparse
+import json
+import os
+import socket
 import threading
 import time
 import traceback
@@ -8,12 +12,15 @@ import numpy
 import pigpio
 
 from fuzzy_controller.fuzzy_system import FuzzySystem
+from misc.connection_helper import ConnectionHelper
 from misc.motor_controller import QuadMotorController
 from misc.range_sensor import UltraSonicSensors
 
 # init controllers
 motor_controller = QuadMotorController()
 fuzzy_system = FuzzySystem()
+socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
 pi = pigpio.pi()
 
 r_range_sensors_pins = {
@@ -42,7 +49,7 @@ MANUAL = 'Manual'
 
 status = run
 # Simulation Timer
-sim_time = 30.0
+sim_time = 60.0
 
 goal_threshold = 1
 # position
@@ -179,6 +186,70 @@ def success():
     return loss < goal_threshold
 
 
+def movement():
+    global socket, dl, df, dr, alpha, p, ed, status, u, w
+    print("started")
+
+    while True:
+        try:
+            message = {
+                "dl": dl,
+                "df": df,
+                "dr": dr,
+                "alpha": alpha,
+                "p": p,
+                "ed": ed
+            }
+
+            ConnectionHelper.send_json(socket, message)
+            result = ConnectionHelper.receive_json(socket)
+
+            result = result.decode("utf-8")
+            print("Got >>", result)
+            json_message = json.loads(result)
+
+            if "u" in result and "w" in result:
+                u = json_message.get("u")
+                w = json_message.get("w")
+
+            if "status" in result:
+                status = json_message.get("status")
+                print(f"action: {status}")
+                if status == STOP:
+                    # stop = True
+                    stopall()
+
+            FB = json_message.get("FB")
+
+            LR = json_message.get("LR")
+
+            manual_speed = 50
+            # print FB + " " + LR + str(len(FB)) + str(len(LR))
+            if FB == "F":
+                forwards(m_speed=manual_speed)
+                pass
+            elif FB == "B":
+                reverse(m_speed=manual_speed)
+                pass
+
+            elif LR == "L":
+                turnleft(m_speed=manual_speed)
+                pass
+
+            elif LR == "R":
+                turnright(m_speed=manual_speed)
+                pass
+
+            elif LR == "S" or FB == "S":
+                # print 'stop'
+                stopall()
+        except Exception as e:
+            print(e)
+            print(traceback.format_exc())
+            status = STOP
+            break
+
+
 u = 0
 w = 0
 
@@ -189,11 +260,8 @@ def do_fuzzy():
     while status == run:
         try:
             print('{} {} {} {} {} {}'.format(dl, df, dr, alpha, p, ed))
-            print('{} {} {} {} {} {}'.format(dl, df, dr, alpha, p, ed))
-            print('{} {} {} {} {} {}'.format(dl, df, dr, alpha, p, ed))
-            print('{} {} {} {} {} {}'.format(dl, df, dr, alpha, p, ed))
-            u, w = fuzzy_system.run(dl, df, dr, 1, 1, 1)
-            print('step')
+            u, w = fuzzy_system.run(dl, df, dr, alpha, p, ed, use_lex=False)
+            print('step {} : {} '.format(u, w))
         except Exception as e:
             print(e)
             print(traceback.format_exc())
@@ -202,16 +270,31 @@ def do_fuzzy():
     print('Fuzzy system is Deactivated')
 
 
+fb_speed = 0
+lr_speed = 0
+
+
 def auto_movement():
-    global position, dl, df, dr, alpha, p, ed, alpha, status, u, w
+    global position, dl, df, dr, alpha, p, ed, alpha, status, u, w, fb_speed, lr_speed
     print('auto movement thread is running')
 
     while status == run and not success():
         try:
+            print('{} {} {} {} {} {}'.format(dl, df, dr, alpha, p, ed))
+
+            dl = max(min(dl, 4), 0)
+            df = max(min(df, 4), 0)
+            dr = max(min(dr, 4), 0)
+            alpha = max(min(alpha, 4), -4)
+            p = max(min(p, 20), 0)
+            ed = max(min(ed, 1), -1)
+            u, w = fuzzy_system.run(dl, df, dr, alpha, p, ed, use_lex=False)
+
             fb_speed = 0
 
             if u is not None:
                 fb_speed = int(map(u, 0, 2, 0, 100))
+                print('forward {} '.format(fb_speed))
                 forwards(fb_speed)
                 time.sleep(0.3)
                 stopall()
@@ -219,13 +302,14 @@ def auto_movement():
             lr_speed = 0
             if w is not None:
                 lr_speed = int(map(w, -5, 5, -100, 100))
+                print('LR {} '.format(lr_speed))
                 if lr_speed > 0:
                     turnright(lr_speed)
                 else:
                     turnleft(abs(lr_speed))
                 time.sleep(0.3)
                 stopall()
-                position['thetaD'] += w
+                position['theta'] += w
 
             # ro at i+1
 
@@ -243,7 +327,7 @@ def auto_movement():
             p = p_current
             print(p_current)
             print(alpha)
-            print_status(position, fb_speed, lr_speed, dl, df, dr)
+            # print_status(position, fb_speed, lr_speed, dl, df, dr)
         except Exception as e:
             print(e)
             print(traceback.format_exc())
@@ -253,19 +337,22 @@ def auto_movement():
     print('auto movement thread is stopped')
 
 
-def print_status(pos, fb_speed, lr_speed, dl, df, dr):
-    # os.system('clear')
-    print('******************************')
-    print('lr speed is : {}\nfb speed is : {} '.format(fb_speed, lr_speed))
-    print('******************************')
-    print('current Position is :{},{},{}'.format(pos['x'], pos['y'], pos['theta']))
-    print('******************************')
-    print('Destination Position is :{},{},{}'.format(pos['xd'], pos['yd'], pos['thetaD']))
-    print('******************************')
-    print('Distance L:{} F:{} R:{}'.format(dl, df, dr))
-    print('******************************')
-    print('Loss is :{}'.format(loss))
-    print('******************************')
+def print_status():
+    global position, fb_speed, lr_speed, dl, df, dr
+    while status == run:
+        os.system('clear')
+        print('******************************')
+        print('lr speed is : {}\nfb speed is : {} '.format(fb_speed, lr_speed))
+        print('******************************')
+        print('current Position is :{},{},{}'.format(position['x'], position['y'], position['theta']))
+        print('******************************')
+        print('Destination Position is :{},{},{}'.format(position['xd'], position['yd'], position['thetaD']))
+        print('******************************')
+        print('Distance L:{} F:{} R:{}'.format(dl, df, dr))
+        print('******************************')
+        print('Loss is :{}'.format(loss))
+        print('******************************')
+        time.sleep(0.2)
 
 
 def simulation_timer():
@@ -284,23 +371,40 @@ def simulation_timer():
 if __name__ == '__main__':
     try:
 
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--host', type=str,
+                            default='192.168.1.4')
+        parser.add_argument('--port', type=int,
+                            default=8888)
+
+        arguments = parser.parse_args()
+
+        try:
+            socket.connect((arguments.host, arguments.port))
+            print('connected to server ' + arguments.host + ':' + str(arguments.port))
+        except Exception as e:
+            print(e)
+            print(traceback.format_exc())
+            status = STOP
+
         range_sensor_thread = threading.Thread(target=range_updater)
         fuzzy_thread = threading.Thread(target=do_fuzzy)
-        # auto_movement_thread = threading.Thread(target=auto_movement)
+        auto_movement_thread = threading.Thread(target=auto_movement)
         simulation_timer_thread = threading.Thread(target=simulation_timer)
+        print_thread = threading.Thread(target=print_status)
 
         range_sensor_thread.start()
-
-        fuzzy_thread.start()
+        # fuzzy_thread.start()
         simulation_timer_thread.start()
-        # auto_movement_thread.start()
+        auto_movement_thread.start()
+        print_thread.start()
 
-        #  Join Thread to Stop together
-        # range_sensor_thread.join()
-        fuzzy_thread.join()
-        # auto_movement_thread.join()
+        #  Join Threads to Stop together
+        range_sensor_thread.join()
+        # fuzzy_thread.join()
+        auto_movement_thread.join()
         simulation_timer_thread.join()
-
+        print_thread.join()
     finally:
         # Force STOP MOTORS
         stopall(force=True)
