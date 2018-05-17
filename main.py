@@ -27,18 +27,24 @@ if __name__ == '__main__':
 
     # the movement of the robot with the target, in [-1, 1]
     ed = p - prev_p
-
+    print(ed)
     # u Linear velocity, w angular velocity
     # u in [0, 1.3] m/s
     # w in [-4.3, 4.3] rad/s
 
     # distance to obstacles measured by sensor i
-    d = [3, 3, 3, 3, 3, 3, 3, 3]
+    d = [1.2, 2.2, 3.2, 4.2, 5.2, 2.2, 7.2, 8.2]
     dr = min(d[0], d[1], d[2])
     df = min(d[3], d[4])
     dl = min(d[5], d[6], d[7])
-    use_lex = False
     fuzzy_system = FuzzySystem()
+    dl = max(min(dl, 4), 0)
+    df = max(min(df, 4), 0)
+    dr = max(min(dr, 4), 0)
+    a = max(min(a, 4), -4)
+    p = max(min(p, 20), 0)
+    ed = max(min(ed, 1), -1)
+    print('{} {} {} {} {} {}'.format(dl, df, dr, a, p, ed))
     while True:
-        u, w = fuzzy_system.run(dl, df, dr, a, p, ed, use_lex=False)
+        u, w = fuzzy_system.run(1.68, 0.07, 2.02, a, p, ed, use_lex=False)
         print(f"u = {u}, w = {w}")

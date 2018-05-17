@@ -66,7 +66,6 @@ class UltraSonicSensors:
             rs.trigger()
             time.sleep(0.01)
             distance, is_new = rs.get_centimetres()
-            print('current distance :' + str(distance))
             if distance < temp:
                 temp = distance
         return temp

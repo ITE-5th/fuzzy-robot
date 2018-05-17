@@ -1,5 +1,5 @@
 from fuzzy_controller.fuzzy_system import FuzzySystem
-from server.connection_helper import ConnectionHelper
+from misc.connection_helper import ConnectionHelper
 
 
 class RequestHandler:
@@ -8,7 +8,9 @@ class RequestHandler:
         self.use_lex = use_lex
 
     def handle_message(self, message):
-        dl, df, dr, a, p, ed = message["dl"], message["df"], message["dr"], message["a"], message["p"], message["ed"]
+        dl, df, dr, a, p, ed = message["dl"], message["df"], message["dr"], message["alpha"], message["p"], message[
+            "ed"]
+
         u, w = self.fuzzy_system.run(dl, df, dr, a, p, ed, use_lex=self.use_lex)
         return {
             "u": u,
@@ -19,6 +21,7 @@ class RequestHandler:
         try:
             while True:
                 message = ConnectionHelper.receive_json(client_socket)
+                print(f"received message : {message}")
                 result = self.handle_message(message)
                 ConnectionHelper.send_json(client_socket, result)
                 print("result:")
