@@ -1,3 +1,4 @@
+import os
 import threading
 import time
 
@@ -16,22 +17,39 @@ motor_controller = QuadMotorController()
 gyro_sensor = mpu6050(0x68)
 pi = pigpio.pi()
 
-l_range_sensors_pins = {(23, 24)}
-f_range_sensors_pins = {(23, 24)}
-r_range_sensors_pins = {(23, 24)}
+r_range_sensors_pins = {
+    # R
+    (23, 24),
+    (23, 22),
+    (23, 27),
+}
+f_range_sensors_pins = {
+    # F
+    (23, 17),
+    (23, 4),
+}
+
+l_range_sensors_pins = {
+    # L
+    (23, 18),
+    (23, 25),
+    (23, 12),
+
+}
 
 run = 'Running'
 STOP = 'Stopped'
 MANUAL = 'Manual'
 
 status = run
-
-goal_threshold = 0.5
+# Simulation Timer
+sim_time = 10
+goal_threshold = 10
 # position
 # x , y , theta
 position = {'x': 5, 'y': 5, 'theta': 5,
             'xd': 0, 'yd': 0, 'thetaD': 0}
-
+loss = numpy.inf
 # range sensor value
 dl = None
 df = None
@@ -48,7 +66,7 @@ motor_status = 'stop'
 
 
 def range_updater():
-    global dl, df, dr
+    global dl, df, dr, status
     print('range Sensor thread is running')
 
     # init range sensors
@@ -70,31 +88,8 @@ def range_updater():
             f_range_sensors.cancel()
             r_range_sensors.cancel()
             pi.stop()
-
-
-def position_updater():
-    global position, p, ed, alpha
-    while status == run:
-        try:
-            acceleration, gyro, temp = gyro_sensor.get_all_data()
-            position['x'] += acceleration['x']
-            position['y'] += acceleration['y']
-            position['thetaD'] = gyro['z']
-
-            # ro at i+1
-            pi_current = numpy.sqrt(
-                (position['xd'] - position['x']) ** 2 +
-                (position['yd'] - position['y']) ** 2
-            )
-            alpha = numpy.arctan(
-                (position['yd'] - position['y']) /
-                (position['xd'] - position['x'])) - position['theta']
-            ed = pi_current - p
-            p = pi_current
-            time.sleep(0.1)
-        except Exception as e:
-            print(e)
-    return
+            status = STOP
+            break
 
 
 def reverse(m_speed=None):
@@ -155,50 +150,96 @@ def stopall(force=False):
         print(e)
 
 
-# Helper Function
+# Helper Functions
 def map(value, istart, istop, ostart, ostop):
     return ostart + (ostop - ostart) * ((value - istart) / (istop - istart))
 
 
+def pol2cart(rho, phi):
+    x = rho * numpy.cos(phi)
+    y = rho * numpy.sin(phi)
+    return x, y
+
+
 def success():
+    global loss
     current_pos = numpy.array((position['x'], position['y'], position['theta']))
     target_pos = numpy.array((position['xd'], position['yd'], position['thetaD']))
-    return numpy.linalg.norm(target_pos - current_pos) > goal_threshold
+    loss = numpy.linalg.norm(target_pos - current_pos)
+    return loss > goal_threshold
 
 
 def auto_movement():
-    global status
+    global position, p, ed, alpha, status
     fuzzy_system = FuzzySystem()
 
-    while status == run:
-        if success():
-            status = STOP
-        u, w = fuzzy_system.run(dl, df, dr, a, p, ed)
-        # linear velocity
-        if u > 0:
-            forward = map(u, 0, 2, 0, 100)
-            forwards(forward)
-            time.sleep(0.3)
+    while status == run or success():
+        try:
 
-        # angular velocity
-        if w != 0:
-            lr_speed = map(w, -4, 4, -100, 100)
-            if lr_speed > 0:
-                turnright(lr_speed)
-            else:
-                turnleft(lr_speed)
+            if success():
+                status = STOP
+            u, w = fuzzy_system.run(dl, df, dr, a, p, ed)
+            # linear velocity
+            fb_speed = 0
+            if u > 0:
+                fb_speed = map(u, 0, 2, 0, 100)
+                forwards(fb_speed)
                 time.sleep(0.3)
 
+                # angular velocity
+            lr_speed = 0
+            if w != 0:
+                lr_speed = map(w, -4, 4, -100, 100)
+                if lr_speed > 0:
+                    turnright(lr_speed)
+                else:
+                    turnleft(lr_speed)
+                    time.sleep(0.3)
+                position['thetaD'] += lr_speed
 
-def print_status(area, fb_speed, is_left, is_right, lr_speed):
+            # ro at i+1
+
+            x, y = pol2cart(fb_speed, position['theta'])
+            position['x'] += x
+            position['y'] += y
+            pi_current = numpy.sqrt(
+                (position['xd'] - position['x']) ** 2 +
+                (position['yd'] - position['y']) ** 2
+            )
+            alpha = numpy.arctan(
+                (position['yd'] - position['y']) /
+                (position['xd'] - position['x'])) - position['theta']
+            ed = pi_current - p
+            p = pi_current
+            print_status(position, fb_speed, lr_speed)
+        except Exception as e:
+            print(e)
+            status = STOP
+            break
+
+
+def print_status(pos, fb_speed, lr_speed):
+    os.system('clear')
     print('******************************')
-    print('lr speed is :{} {} {}'.format(lr_speed, is_right, is_left))
-    print('x is :{}'.format(area))
+    print('lr speed is : {}\nfb speed is : {} '.format(fb_speed, lr_speed))
     print('******************************')
+    print('current Position is :{},{},{}'.format(pos['x'], pos['y'], pos['theta']))
     print('******************************')
-    print('fb speed is :{} {} {}'.format(fb_speed, is_right, is_left))
-    print('area is :{}'.format(area))
+    print('Destination Position is :{},{},{}'.format(pos['xd'], pos['yd'], pos['thetaD']))
     print('******************************')
+    print('Loss is :{}'.format(loss))
+    print('******************************')
+
+
+def simulation_timer():
+    global status, sim_time
+    if sim_time != -1:
+        end = time.time() + sim_time
+        while time.time() < end:
+            time.sleep(1)
+        status = STOP
+        time.sleep(2)
+        print('simulation stopped because timeout')
 
 
 if __name__ == '__main__':
@@ -206,14 +247,11 @@ if __name__ == '__main__':
 
         range_sensor_thread = threading.Thread(target=range_updater)
         auto_movement_thread = threading.Thread(target=auto_movement)
-        position_updater_thread = threading.Thread(target=position_updater)
         range_sensor_thread.start()
         auto_movement_thread.start()
-        position_updater_thread.start()
 
         #  Join Thread to Stop together
         range_sensor_thread.join()
-        position_updater_thread.join()
         auto_movement_thread.join()
 
     finally:
