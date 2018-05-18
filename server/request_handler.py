@@ -3,15 +3,14 @@ from misc.connection_helper import ConnectionHelper
 
 
 class RequestHandler:
-    def __init__(self, use_lex=False):
-        self.fuzzy_system = FuzzySystem()
-        self.use_lex = use_lex
+    def __init__(self):
+        self.fuzzy_system = FuzzySystem(use_lex)
 
     def handle_message(self, message):
         dl, df, dr, a, p, ed = message["dl"], message["df"], message["dr"], message["alpha"], message["p"], message[
             "ed"]
 
-        u, w = self.fuzzy_system.run(dl, df, dr, a, p, ed, use_lex=self.use_lex)
+        u, w = self.fuzzy_system.run(dl, df, dr, a, p, ed)
         return {
             "u": u,
             "w": w
@@ -26,8 +25,7 @@ class RequestHandler:
                 print(f"received message : {message}")
                 result = self.handle_message(message)
                 ConnectionHelper.send_json(client_socket, result)
-                print("result:")
-                print(result)
+                print(f"result:{result}")
         finally:
             print("socket closed")
             client_socket.close()

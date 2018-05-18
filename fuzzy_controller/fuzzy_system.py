@@ -10,8 +10,9 @@ from solver.multi_objective_optimization_solver import MultiObjectiveOptimizatio
 
 
 class FuzzySystem:
-    def __init__(self, step=0.001, iterations=1000):
+    def __init__(self, use_lex, step=0.001, iterations=1000):
         self.step = step
+        self.use_lex = use_lex
         self.input_dl, self.input_df, self.input_dr, self.input_a, self.input_p, self.input_ed = self.build_inputs()
         self.output_u, self.output_w = self.build_outputs()
         self.oa_controller = ObstacleAvoidanceController(self.input_dl, self.input_df, self.input_dr, self.input_a,
@@ -26,13 +27,13 @@ class FuzzySystem:
         self.lex_solver = LexicographicSolver()
         self.moo_solver = MultiObjectiveOptimizationSolver(self.output_u, self.output_w, iterations)
 
-    def run(self, dl, df, dr, a, p, ed, use_lex=False):
+    def run(self, dl, df, dr, a, p, ed):
         u1, w1 = self.oa_controller.compute(dl, df, dr, a, p, ed)
         u2, w2 = self.lma_controller.compute(dl, df, dr, a, p, ed)
         u3, w3 = self.gr_controller.compute(dl, df, dr, a, p, ed)
         self.moo_solver.set_variables(u1, u2, u3, w1, w2, w3)
         self.lex_solver.set_variables(u1, u2, u3, w1, w2, w3)
-        return self.lex_solver.solve() if use_lex else self.moo_solver.solve()
+        return self.lex_solver.solve() if self.use_lex else self.moo_solver.solve()
 
     def build_inputs(self):
         input_dl = ctrl.Antecedent(np.arange(0, 4, self.step), "input_dl")  # meters
