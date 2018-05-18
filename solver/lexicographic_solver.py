@@ -3,19 +3,26 @@ from solver.solver import Solver
 
 
 class LexicographicSolver(Solver):
-    def solve(self):
-        w1, u1 = self.w1.mfx.max(), self.u1.mfx.max()
-        w2, u2 = self.w2.mfx.max(), self.u2.mfx.max()
-        w3, u3 = self.w3.mfx.max(), self.u3.mfx.max()
 
-        a = Lexicographic([w1, u1], maximize=[True, False])
-        b = Lexicographic([w2, u2], maximize=[True, False])
-        c = Lexicographic([w3, u3], maximize=[True, False])
+    @staticmethod
+    def get_if_not_none(u, w):
+        if u is not None:
+            return u.mfx.max(), w.mfx.max()
+        return -1000000, -100000
+
+    def solve(self):
+        u1, w1 = self.get_if_not_none(self.u1, self.w1)
+        u2, w2 = self.get_if_not_none(self.u2, self.w2)
+        u3, w3 = self.get_if_not_none(self.u3, self.w3)
+
+        a = Lexicographic([u1, w1], maximize=[True, False])
+        b = Lexicographic([u2, w2], maximize=[True, False])
+        c = Lexicographic([u3, w3], maximize=[True, False])
 
         if a > b:
-            return self.w1.find_x(w1), self.u1.find_x(u1)
+            return self.u1.find_x(u1), self.w1.find_x(w1)
 
         if b > c:
-            return self.w2.find_x(w2), self.u2.find_x(u2)
+            return self.u2.find_x(u2), self.w2.find_x(w2)
 
-        return self.w3.find_x(w3), self.u3.find_x(u3)
+        return self.u3.find_x(u3), self.w3.find_x(w3)

@@ -26,7 +26,7 @@ class FuzzySystem:
         self.lex_solver = LexicographicSolver()
         self.moo_solver = MultiObjectiveOptimizationSolver(self.output_u, self.output_w, iterations)
 
-    def run(self, dl, df, dr, a, p, ed, use_lex=True):
+    def run(self, dl, df, dr, a, p, ed, use_lex=False):
         u1, w1 = self.oa_controller.compute(dl, df, dr, a, p, ed)
         u2, w2 = self.lma_controller.compute(dl, df, dr, a, p, ed)
         u3, w3 = self.gr_controller.compute(dl, df, dr, a, p, ed)
