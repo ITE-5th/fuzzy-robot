@@ -4,10 +4,13 @@ import socket
 import threading
 import time
 import traceback
-from math import sqrt
+from math import sqrt, atan2, degrees, radians
 
 import RPi.GPIO as GPIO
 import numpy
+
+# start  pigpiod service
+os.system('sudo pigpiod')
 import pigpio
 
 from misc.connection_helper import ConnectionHelper
@@ -53,11 +56,11 @@ goal_threshold = 1
 # position
 # x , y , theta
 position = {'x': 0, 'y': 0, 'theta': 0,
-            'xd': 100, 'yd': 100, 'thetaD': 100}
+            'xd': 2, 'yd': 0, 'thetaD': 0}
 loss = numpy.inf
 # range sensor value
-dl = 6.2
-df = 4.2
+dl = 2.2
+df = 2.2
 dr = 1.2
 
 alpha = 0
@@ -66,7 +69,7 @@ ed = 1
 # ro
 p = 0
 
-motor_status = 'stop'
+motor_status = STOP
 
 
 def range_updater():
@@ -83,13 +86,14 @@ def range_updater():
         try:
 
             dl = l_range_sensors.update()
-            dl = round(map(dl, 0, 200, 0, 4), 2)
 
             df = f_range_sensors.update()
-            df = round(map(df, 0, 200, 0, 4), 2)
 
             dr = r_range_sensors.update()
-            dr = round(map(dr, 0, 200, 0, 4), 2)
+
+            dl = round(map(dl, 0, 200, 0, 2), 2)
+            df = round(map(df, 0, 200, 0, 2), 2)
+            dr = round(map(dr, 0, 200, 0, 2), 2)
 
             time.sleep(0.1)
         except Exception as e:
@@ -176,103 +180,49 @@ def pol2cart(rho, phi):
 
 
 def success():
-    global loss, goal_threshold
+    global loss, goal_threshold, position
     current_pos = numpy.array((position['x'], position['y'], position['theta']))
     target_pos = numpy.array((position['xd'], position['yd'], position['thetaD']))
     loss = numpy.linalg.norm(target_pos - current_pos)
-    print(goal_threshold)
-    return loss < goal_threshold
+    is_reached = loss < goal_threshold
+    return is_reached
 
 
-def movement():
-    global socket, dl, df, dr, alpha, p, ed, status, u, w
-    print("started")
+def update_data():
+    global socket, dl, df, dr, alpha, p, ed, u, w
+    alpha = round(alpha, 2)
+    p = round(p, 2)
+    ed = round(ed, 2)
 
-    while True:
-        try:
-            dl = max(min(dl, 4), 0)
-            df = max(min(df, 4), 0)
-            dr = max(min(dr, 4), 0)
-            alpha = max(min(alpha, 4), -4)
-            p = max(min(p, 20), 0)
-            ed = max(min(ed, 1), -1)
+    dl = max(min(dl, 2), 0)
+    df = max(min(df, 2), 0)
+    dr = max(min(dr, 2), 0)
+    alpha = max(min(alpha, 4), -4)
+    p = max(min(p, 20), 0)
+    ed = max(min(ed, 1), -1)
+    print(f"dl : {dl}  df : {df}  dr : {dr}  alpha : {alpha}  p : {p}  ed : {ed}")
 
-            message = {
-                "dl": dl,
-                "df": df,
-                "dr": dr,
-                "alpha": alpha,
-                "p": p,
-                "ed": ed
-            }
+    message = {
+        "dl": dl,
+        "df": df,
+        "dr": dr,
+        "alpha": alpha,
+        "p": p,
+        "ed": ed
+    }
 
-            ConnectionHelper.send_json(socket, message)
-            result = ConnectionHelper.receive_json(socket)
+    ConnectionHelper.send_json(socket, message)
+    result = ConnectionHelper.receive_json(socket)
 
-            print("Got >>", result)
+    print("Got >>", result)
 
-            if "u" in result and "w" in result:
-                u = result["u"]
-                w = result["w"]
-
-            if "status" in result:
-                status = result["status"]
-                print(f"action: {status}")
-                if status == STOP:
-                    # stop = True
-                    stopall()
-
-            if 'FB' in result or 'LR' in result:
-
-                FB = result["FB"]
-                LR = result["LR"]
-
-                manual_speed = 50
-                # print FB + " " + LR + str(len(FB)) + str(len(LR))
-                if FB == "F":
-                    forwards(m_speed=manual_speed)
-                    pass
-                elif FB == "B":
-                    reverse(m_speed=manual_speed)
-                    pass
-
-                elif LR == "L":
-                    turnleft(m_speed=manual_speed)
-                    pass
-
-                elif LR == "R":
-                    turnright(m_speed=manual_speed)
-                    pass
-
-                elif LR == "S" or FB == "S":
-                    # print 'stop'
-                    stopall()
-        except Exception as e:
-            print(e)
-            print(traceback.format_exc())
-            status = STOP
-            break
+    if "u" in result and "w" in result:
+        u = result["u"]
+        w = result["w"]
 
 
 u = 0
 w = 0
-
-
-def do_fuzzy():
-    global dl, df, dr, alpha, p, ed, status, u, w
-    print('Fuzzy system is activated')
-    while status == run:
-        try:
-            print('{} {} {} {} {} {}'.format(dl, df, dr, alpha, p, ed))
-            u, w = fuzzy_system.run(dl, df, dr, alpha, p, ed, use_lex=False)
-            print('step {} : {} '.format(u, w))
-        except Exception as e:
-            print(e)
-            print(traceback.format_exc())
-            status = STOP
-            break
-    print('Fuzzy system is Deactivated')
-
 
 fb_speed = 0
 lr_speed = 0
@@ -281,75 +231,89 @@ lr_speed = 0
 def auto_movement():
     global position, dl, df, dr, alpha, p, ed, alpha, status, u, w, fb_speed, lr_speed
     print('auto movement thread is running')
-
-    while status == run and not success():
+    move_time = 0.5
+    goal_reached = success()
+    while status == run and not goal_reached:
         try:
-
             fb_speed = 0
-
-            if u is not None:
-                fb_speed = int(map(u, 0, 2, 0, 100))
-                print('forward {} '.format(fb_speed))
-                forwards(fb_speed)
-                time.sleep(0.3)
-                stopall()
-                # angular velocity
-            lr_speed = 0
+            # communicate with server
+            update_data()
             if w is not None:
-                lr_speed = int(map(w, -5, 5, -100, 100))
+                # lr_speed = int(map(w, -5, 5, -100, 100))
+                lr_speed = degrees(w) / 300
                 print('LR {} '.format(lr_speed))
                 if lr_speed > 0:
-                    turnright(lr_speed)
-                else:
-                    turnleft(abs(lr_speed))
-                time.sleep(0.3)
+                    turnright(100)
+                elif lr_speed < 0:
+                    turnleft(100)
+                time.sleep(lr_speed)
                 stopall()
-                position['theta'] += w
+                # angular velocity
+                # degree = lr_speed * move_time / 360
 
-            # ro at i+1
+                position['theta'] += w  # to Radians
+                position['theta'] = position['theta'] % radians(360)
+                lr_speed = 0
+                time.sleep(0.2)
 
-            x, y = pol2cart(u, position['theta'])
-            position['x'] += x
-            position['y'] += y
+            if u is not None:
+                fb_speed = int(map(u, 0, 1, 0, 100))
+                print('forward {} '.format(fb_speed))
+                forwards(fb_speed)
+                time.sleep(move_time)
+                stopall()
 
+                x, y = pol2cart(u * move_time, position['theta'])
+                position['x'] += x
+                position['y'] += y
+
+            # Distance from the center of the robot to the target
             p_current = sqrt(
                 pow((position['xd'] - position['x']), 2) +
                 pow(position['yd'] - position['y'], 2))
-            alpha = numpy.arctan(
-                (position['yd'] - position['y']) /
-                (position['xd'] - position['x'])) - position['theta']
+
+            # angle between the robot heading and the vector connecting the robot center with the target,
+            # alpha in [-pi, +pi]
+            alpha = atan2(position['yd'] - position['y'], position['xd'] - position['x']) - position['theta']
+
             ed = p_current - p
             p = p_current
-            print(p_current)
-            print(alpha)
-            u = 0
-            w = 0
+            # print(p_current)
+            # print(alpha)
             # print_status(position, fb_speed, lr_speed, dl, df, dr)
+            goal_reached = success()
         except Exception as e:
             print(e)
             print(traceback.format_exc())
-
-            status = STOP
             break
-    print('auto movement thread is stopped')
+    print('Robot Stopped because ' + ('goal reached ' if goal_reached else 'Unknown Reason'))
+    time.sleep(0.5)
+    status = STOP
 
 
 def print_status():
-    global position, fb_speed, lr_speed, dl, df, dr
+    global position, fb_speed, lr_speed, dl, df, dr, ed, p
     while status == run:
         os.system('clear')
         print('******************************')
         print('lr speed is : {}\nfb speed is : {} '.format(fb_speed, lr_speed))
         print('******************************')
-        print('current Position is :{},{},{}'.format(position['x'], position['y'], position['theta']))
+        print('ed is : {}\np is : {} '.format(ed, p))
+        print('******************************')
+        print('current Position is :{},{},{}'.format(position['x'], position['y'], degrees(position['theta'])))
         print('******************************')
         print('Destination Position is :{},{},{}'.format(position['xd'], position['yd'], position['thetaD']))
         print('******************************')
         print('Distance L:{} F:{} R:{}'.format(dl, df, dr))
         print('******************************')
         print('Loss is :{}'.format(loss))
-        print('******************************')
-        time.sleep(0.2)
+        if loss < goal_threshold:
+            print('***********************GOAL***REACHED***************************************')
+            print('***********************GOAL***REACHED***************************************')
+            print('***********************GOAL***REACHED***************************************')
+            print('***********************GOAL***REACHED***************************************')
+            print('***********************GOAL***REACHED***************************************')
+        time.sleep(0.3)
 
 
 def simulation_timer():
@@ -357,11 +321,10 @@ def simulation_timer():
     print('simulation timer has started')
     if sim_time != -1:
         end = time.time() + sim_time
-        while time.time() < end:
+        while time.time() < end and status == run:
             time.sleep(1)
         status = STOP
         time.sleep(2)
-        print('simulation stopped because timeout')
     print('simulation timer has stopped')
 
 
@@ -389,17 +352,18 @@ if __name__ == '__main__':
         auto_movement_thread = threading.Thread(target=auto_movement)
         simulation_timer_thread = threading.Thread(target=simulation_timer)
         print_thread = threading.Thread(target=print_status)
-        movement_thread = threading.Thread(target=movement)
+        # movement_thread = threading.Thread(target=movement)
 
         range_sensor_thread.start()
-        movement_thread.start()
+        time.sleep(0.5)
+        # movement_thread.start()
         # fuzzy_thread.start()
-        auto_movement_thread.start()
         print_thread.start()
         simulation_timer_thread.start()
+        auto_movement_thread.start()
 
         #  Join Threads to Stop together
-        movement_thread.join()
+        # movement_thread.join()
         range_sensor_thread.join()
         # fuzzy_thread.join()
         auto_movement_thread.join()
