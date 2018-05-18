@@ -46,5 +46,5 @@ if __name__ == '__main__':
     ed = max(min(ed, 1), -1)
     print('{} {} {} {} {} {}'.format(dl, df, dr, a, p, ed))
     while True:
-        u, w = fuzzy_system.run(1.68, 0.07, 2.02, a, p, ed, use_lex=True)
+        u, w = fuzzy_system.run(1.68, 0.07, 2.02, a, p, ed)
         print(f"u = {u}, w = {w}")

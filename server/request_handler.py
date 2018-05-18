@@ -3,7 +3,7 @@ from misc.connection_helper import ConnectionHelper
 
 
 class RequestHandler:
-    def __init__(self):
+    def __init__(self, use_lex=True):
         self.fuzzy_system = FuzzySystem(use_lex)
 
     def handle_message(self, message):

@@ -3,22 +3,23 @@ import socket
 import threading
 
 try:
-    from request_handler import RequestHandler
-except:
     from server.request_handler import RequestHandler
+except:
+    from request_handler import RequestHandler
 
 
 class LocalServer:
-    def __init__(self, host=socket.gethostname(), port=8888):
+    def __init__(self, host=socket.gethostname(), port=8888, use_lex=True):
         self.host = host
         self.port = port
+        self.use_lex = use_lex
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.bind((host, port))
         self.socket.listen(5)
         self.client_socket, self.address = None, None
 
     def handle_client_connection(self, client_socket):
-        handler = RequestHandler()
+        handler = RequestHandler(self.use_lex)
         handler.start(client_socket)
 
     def start(self):
