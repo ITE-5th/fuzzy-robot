@@ -33,11 +33,14 @@ class FuzzyController(metaclass=ABCMeta):
         temp = self.inputs(dl, df, dr, a, p, ed)
         if not self.validate(temp):
             return None, None
-        self.controller.inputs(temp)
-        self.controller.compute()
-        u_universe, mfu, _ = CrispValueCalculator(self.output_u, self.controller).find_memberships()
-        w_universe, mfw, _ = CrispValueCalculator(self.output_w, self.controller).find_memberships()
-        return MfMapping(u_universe, mfu), MfMapping(w_universe, mfw)
+        try:
+            self.controller.inputs(temp)
+            self.controller.compute()
+            u_universe, mfu, _ = CrispValueCalculator(self.output_u, self.controller).find_memberships()
+            w_universe, mfw, _ = CrispValueCalculator(self.output_w, self.controller).find_memberships()
+            return MfMapping(u_universe, mfu), MfMapping(w_universe, mfw)
+        except:
+            return None, None
 
 
 class MfMapping:

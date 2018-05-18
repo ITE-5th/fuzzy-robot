@@ -6,7 +6,7 @@ from fuzzy_controller.fuzzy_controller import FuzzyController
 class ObstacleAvoidanceController(FuzzyController):
 
     def validate(self, values):
-        t = 1.25
+        t = 1.5
         temp = super().validate(values)
         temp2 = (values["input_dl"] <= t or values["input_df"] <= t or values["input_dr"] <= t)
         return temp and temp2
