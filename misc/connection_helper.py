@@ -17,11 +17,14 @@ class ConnectionHelper:
 
     @staticmethod
     def receive_json(socket):
-        view = ConnectionHelper.receive(socket).decode()
+        deserialized = None
         try:
+            view = ConnectionHelper.receive(socket).decode()
             deserialized = json.loads(view)
         except (TypeError, ValueError) as e:
             raise Exception('Data received was not in JSON format')
+        except Exception as e:
+            print(e)
         return deserialized
 
     @staticmethod

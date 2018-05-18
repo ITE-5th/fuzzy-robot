@@ -116,8 +116,8 @@ if __name__ == "__main__":
         # time.sleep(0.1)
 
         print('Min L: ' + str(l_range_sensors.update()))
-        # print('Min F: ' + str(f_range_sensors.update()))
-        # print('Min R: ' + str(r_range_sensors.update()))
+        print('Min F: ' + str(f_range_sensors.update()))
+        print('Min R: ' + str(r_range_sensors.update()))
         time.sleep(0.1)
 
         # sonar.trigger()

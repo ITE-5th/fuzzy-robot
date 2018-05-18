@@ -21,6 +21,8 @@ class RequestHandler:
         try:
             while True:
                 message = ConnectionHelper.receive_json(client_socket)
+                if message is None:
+                    break
                 print(f"received message : {message}")
                 result = self.handle_message(message)
                 ConnectionHelper.send_json(client_socket, result)
