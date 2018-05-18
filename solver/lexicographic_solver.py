@@ -14,10 +14,10 @@ class LexicographicSolver(Solver):
         u1, w1 = self.get_if_not_none(self.u1, self.w1)
         u2, w2 = self.get_if_not_none(self.u2, self.w2)
         u3, w3 = self.get_if_not_none(self.u3, self.w3)
-
-        a = Lexicographic([u1, w1], maximize=[True, False])
-        b = Lexicographic([u2, w2], maximize=[True, False])
-        c = Lexicographic([u3, w3], maximize=[True, False])
+        temp = [False, True]
+        a = Lexicographic([u1, w1], maximize=temp)
+        b = Lexicographic([u2, w2], maximize=temp)
+        c = Lexicographic([u3, w3], maximize=temp)
 
         if a > b:
             return self.u1.find_x(u1), self.w1.find_x(w1)
