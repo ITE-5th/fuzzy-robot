@@ -37,7 +37,7 @@ if __name__ == '__main__':
     dr = min(d[0], d[1], d[2])
     df = min(d[3], d[4])
     dl = min(d[5], d[6], d[7])
-    fuzzy_system = FuzzySystem()
+    fuzzy_system = FuzzySystem(False)
     dl = max(min(dl, 4), 0)
     df = max(min(df, 4), 0)
     dr = max(min(dr, 4), 0)
@@ -45,6 +45,14 @@ if __name__ == '__main__':
     p = max(min(p, 20), 0)
     ed = max(min(ed, 1), -1)
     print('{} {} {} {} {} {}'.format(dl, df, dr, a, p, ed))
+    msg = {'dl': 1.21, 'df': 1.51, 'dr': 1.22, 'alpha': 0.0, 'p': 2.0, 'ed': 1}
+    dl = msg['dl']
+    df = msg['df']
+    dr = msg['dr']
+    a = msg['alpha']
+    p = msg['p']
+    ed = msg['ed']
     while True:
-        u, w = fuzzy_system.run(1.68, 0.07, 2.02, a, p, ed)
+        u, w = fuzzy_system.run(dl, df, dr, a, p, ed)
+
         print(f"u = {u}, w = {w}")

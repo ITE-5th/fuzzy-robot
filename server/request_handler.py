@@ -12,8 +12,8 @@ class RequestHandler:
 
         u, w = self.fuzzy_system.run(dl, df, dr, a, p, ed)
         return {
-            "u": u,
-            "w": w
+            "u": round(u, 4),
+            "w": round(w, 4)
         }
 
     def start(self, client_socket):

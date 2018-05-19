@@ -63,6 +63,11 @@ if __name__ == '__main__':
     x.move_forward(100)
     time.sleep(1)
     x.stopall()
+    time.sleep(1)
+
+    x.move_left(100)
+    time.sleep(1)
+    x.stopall()
 
     # x.move_forward(100)
 

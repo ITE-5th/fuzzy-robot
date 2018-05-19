@@ -18,6 +18,7 @@ class MultiObjectiveOptimizationSolver(Solver):
         u_problem, w_problem = self.build_problems()
         with Pool(2) as p:
             u, w = p.map(self._solve, [(u_problem, self.iterations), (w_problem, self.iterations)])
+        print(self.used_components)
         return u, w
 
     @staticmethod

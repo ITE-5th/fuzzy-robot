@@ -56,19 +56,22 @@ goal_threshold = 1
 # position
 # x , y , theta
 position = {'x': 0, 'y': 0, 'theta': 0,
-            'xd': 2, 'yd': 0, 'thetaD': 0}
+            'xd': 1, 'yd': 0, 'thetaD': 0}
 loss = numpy.inf
 # range sensor value
 dl = 2.2
 df = 2.2
 dr = 1.2
 
-alpha = 0
-ed = 1
+# angle between the robot heading and the vector connecting the robot center with the target,
+# alpha in [-pi, +pi]
+alpha = atan2(position['yd'] - position['y'], position['xd'] - position['x']) - position['theta']
 
-# ro
-p = 0
+p = sqrt(
+    pow((position['xd'] - position['x']), 2) +
+    pow(position['yd'] - position['y'], 2))
 
+ed = p
 motor_status = STOP
 
 
@@ -86,13 +89,12 @@ def range_updater():
         try:
 
             dl = l_range_sensors.update()
+            dl = round(map(dl, 0, 200, 0, 2), 2)
 
             df = f_range_sensors.update()
+            df = round(map(df, 0, 200, 0, 2), 2)
 
             dr = r_range_sensors.update()
-
-            dl = round(map(dl, 0, 200, 0, 2), 2)
-            df = round(map(df, 0, 200, 0, 2), 2)
             dr = round(map(dr, 0, 200, 0, 2), 2)
 
             time.sleep(0.1)
