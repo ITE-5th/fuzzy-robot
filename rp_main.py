@@ -8,9 +8,8 @@ from math import sqrt, atan2, degrees, radians
 
 import RPi.GPIO as GPIO
 import numpy
-
 # start  pigpiod service
-os.system('sudo pigpiod')
+# os.system('sudo pigpiod')
 import pigpio
 
 from misc.connection_helper import ConnectionHelper
@@ -56,12 +55,12 @@ goal_threshold = 1
 # position
 # x , y , theta
 position = {'x': 0, 'y': 0, 'theta': 0,
-            'xd': 1, 'yd': 0, 'thetaD': 0}
+            'xd': 0, 'yd': 2, 'thetaD': 0}
 loss = numpy.inf
 # range sensor value
 dl = 2.2
 df = 2.2
-dr = 1.2
+dr = 2.2
 
 # angle between the robot heading and the vector connecting the robot center with the target,
 # alpha in [-pi, +pi]
@@ -89,15 +88,15 @@ def range_updater():
         try:
 
             dl = l_range_sensors.update()
-            dl = round(map(dl, 0, 200, 0, 2), 2)
+            dl = round(dl / 50, 2)
 
             df = f_range_sensors.update()
-            df = round(map(df, 0, 200, 0, 2), 2)
+            df = round(df / 50, 2)
 
             dr = r_range_sensors.update()
-            dr = round(map(dr, 0, 200, 0, 2), 2)
+            dr = round(dr / 50, 2)
 
-            time.sleep(0.1)
+            time.sleep(0.2)
         except Exception as e:
             print(e)
             print(traceback.format_exc())
@@ -196,18 +195,21 @@ def update_data():
     p = round(p, 2)
     ed = round(ed, 2)
 
-    dl = max(min(dl, 2), 0)
-    df = max(min(df, 2), 0)
-    dr = max(min(dr, 2), 0)
+    # m_dl = max(min(dl, 4), 0)
+    # m_df = max(min(df, 4), 0)
+    # m_dr = max(min(dr, 4), 0)
+    m_dl = 4
+    m_df = 4
+    m_dr = 4
     alpha = max(min(alpha, 4), -4)
     p = max(min(p, 20), 0)
     ed = max(min(ed, 1), -1)
-    print(f"dl : {dl}  df : {df}  dr : {dr}  alpha : {alpha}  p : {p}  ed : {ed}")
+    print(f"dl : {m_dl}  df : {m_df}  dr : {m_dr}  alpha : {alpha}  p : {p}  ed : {ed}")
 
     message = {
-        "dl": dl,
-        "df": df,
-        "dr": dr,
+        "dl": m_dl,
+        "df": m_df,
+        "dr": m_dr,
         "alpha": alpha,
         "p": p,
         "ed": ed
@@ -245,9 +247,9 @@ def auto_movement():
                 lr_speed = degrees(w) / 300
                 print('LR {} '.format(lr_speed))
                 if lr_speed > 0:
-                    turnright(100)
-                elif lr_speed < 0:
                     turnleft(100)
+                elif lr_speed < 0:
+                    turnright(100)
                 time.sleep(lr_speed)
                 stopall()
                 # angular velocity
@@ -300,7 +302,7 @@ def print_status():
         print('******************************')
         print('lr speed is : {}\nfb speed is : {} '.format(fb_speed, lr_speed))
         print('******************************')
-        print('ed is : {}\np is : {} '.format(ed, p))
+        print('alpha is : {} \ned is : {}\np is : {} '.format(alpha, ed, p))
         print('******************************')
         print('current Position is :{},{},{}'.format(position['x'], position['y'], degrees(position['theta'])))
         print('******************************')
@@ -357,7 +359,7 @@ if __name__ == '__main__':
         # movement_thread = threading.Thread(target=movement)
 
         range_sensor_thread.start()
-        time.sleep(0.5)
+        time.sleep(1)
         # movement_thread.start()
         # fuzzy_thread.start()
         print_thread.start()

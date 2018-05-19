@@ -27,7 +27,6 @@ class sensor:
         self._cb = pi.callback(self._echo, pigpio.EITHER_EDGE, self._cbf)
 
     def _cbf(self, gpio, level, tick):
-
         if level == 1:
             self._tick = tick
         else:
@@ -62,11 +61,14 @@ class UltraSonicSensors:
 
     def update(self):
         temp = float('Inf')
+        self.range_sensors[0].trigger()
         for rs in self.range_sensors:
-            rs.trigger()
             time.sleep(0.01)
+
             distance, is_new = rs.get_centimetres()
-            if distance < temp:
+            # print(distance)
+
+            if is_new and temp > distance > 1:
                 temp = distance
         return temp
 
