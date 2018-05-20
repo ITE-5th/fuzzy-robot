@@ -1,9 +1,9 @@
 import skfuzzy.control as ctrl
 
-from fuzzy_controller.fuzzy_controller import FuzzyController
+from fuzzy_system.moo_fuzzy_controller import MooFuzzyController
 
 
-class GoalReachingController(FuzzyController):
+class GoalReachingController(MooFuzzyController):
 
     def inputs(self, dl, df, dr, a, p, ed):
         return {

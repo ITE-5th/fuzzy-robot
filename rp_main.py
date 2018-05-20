@@ -43,6 +43,8 @@ l_range_sensors_pins = {
 
 }
 
+method = "simple"
+
 run = 'Running'
 STOP = 'Stopped'
 MANUAL = 'Manual'
@@ -61,7 +63,8 @@ loss = numpy.inf
 dl = 2.2
 df = 2.2
 dr = 2.2
-
+angle = 0
+u, w = 10, 0
 # angle between the robot heading and the vector connecting the robot center with the target,
 # alpha in [-pi, +pi]
 alpha = atan2(position['yd'] - position['y'], position['xd'] - position['x']) - position['theta']
@@ -181,16 +184,18 @@ def pol2cart(rho, phi):
 
 
 def success():
-    global loss, goal_threshold, position
-    current_pos = numpy.array((position['x'], position['y'], position['theta']))
-    target_pos = numpy.array((position['xd'], position['yd'], position['thetaD']))
-    loss = numpy.linalg.norm(target_pos - current_pos)
-    is_reached = loss < goal_threshold
-    return is_reached
+    if method == "moo":
+        global loss, goal_threshold, position
+        current_pos = numpy.array((position['x'], position['y'], position['theta']))
+        target_pos = numpy.array((position['xd'], position['yd'], position['thetaD']))
+        loss = numpy.linalg.norm(target_pos - current_pos)
+        is_reached = loss < goal_threshold
+        return is_reached
+    return False
 
 
 def update_data():
-    global socket, dl, df, dr, alpha, p, ed, u, w
+    global socket, dl, df, dr, alpha, p, ed, u, w, angle
     alpha = round(alpha, 2)
     p = round(p, 2)
     ed = round(ed, 2)
@@ -212,7 +217,9 @@ def update_data():
         "dr": m_dr,
         "alpha": alpha,
         "p": p,
-        "ed": ed
+        "ed": ed,
+        # map it to [0, 100]
+        "velocity": u
     }
 
     ConnectionHelper.send_json(socket, message)
@@ -223,6 +230,9 @@ def update_data():
     if "u" in result and "w" in result:
         u = result["u"]
         w = result["w"]
+    else:
+        u = result["velocity"]
+        angle = result["angle"]
 
 
 u = 0
@@ -233,7 +243,7 @@ lr_speed = 0
 
 
 def auto_movement():
-    global position, dl, df, dr, alpha, p, ed, alpha, status, u, w, fb_speed, lr_speed
+    global position, dl, df, dr, alpha, p, ed, alpha, status, u, w, fb_speed, lr_speed, angle
     print('auto movement thread is running')
     move_time = 0.5
     goal_reached = success()
@@ -242,32 +252,38 @@ def auto_movement():
             fb_speed = 0
             # communicate with server
             update_data()
-            if w is not None:
-                # lr_speed = int(map(w, -5, 5, -100, 100))
-                lr_speed = degrees(w) / 300
-                print('LR {} '.format(lr_speed))
-                if lr_speed > 0:
-                    turnleft(100)
-                elif lr_speed < 0:
-                    turnright(100)
-                time.sleep(lr_speed)
-                stopall()
-                # angular velocity
-                # degree = lr_speed * move_time / 360
+            if method == "moo":
+                if w is not None:
+                    # lr_speed = int(map(w, -5, 5, -100, 100))
+                    lr_speed = degrees(w) / 300
+                    print('LR {} '.format(lr_speed))
+                    if lr_speed > 0:
+                        turnleft(100)
+                    elif lr_speed < 0:
+                        turnright(100)
+                    time.sleep(lr_speed)
+                    stopall()
+                    # angular velocity
+                    # degree = lr_speed * move_time / 360
 
-                position['theta'] += w  # to Radians
-                position['theta'] = position['theta'] % radians(360)
-                lr_speed = 0
-                time.sleep(0.2)
+                    position['theta'] += w  # to Radians
+                    position['theta'] = position['theta'] % radians(360)
+                    lr_speed = 0
+                    time.sleep(0.2)
 
-            if u is not None:
-                fb_speed = int(map(u, 0, 1, 0, 100))
-                print('forward {} '.format(fb_speed))
-                forwards(fb_speed)
-                time.sleep(move_time)
-                stopall()
+                if u is not None:
+                    fb_speed = int(map(u, 0, 1, 0, 100))
+                    print('forward {} '.format(fb_speed))
+                    forwards(fb_speed)
+                    time.sleep(move_time)
+                    stopall()
 
-                x, y = pol2cart(u * move_time, position['theta'])
+                    x, y = pol2cart(u * move_time, position['theta'])
+                    position['x'] += x
+                    position['y'] += y
+            else:
+                # simple
+                x, y = pol2cart(u * move_time, angle)
                 position['x'] += x
                 position['y'] += y
 

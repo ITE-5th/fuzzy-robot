@@ -1,9 +1,9 @@
 import skfuzzy.control as ctrl
 
-from fuzzy_controller.fuzzy_controller import FuzzyController
+from fuzzy_system.moo_fuzzy_controller import MooFuzzyController
 
 
-class ObstacleAvoidanceController(FuzzyController):
+class ObstacleAvoidanceController(MooFuzzyController):
 
     def validate(self, values):
         t = 1.5
