@@ -25,14 +25,14 @@ class FuzzySystem:
                                                     self.input_p, self.input_ed, self.output_u,
                                                     self.output_w)
         self.lex_solver = LexicographicSolver()
-        self.moo_solver = MultiObjectiveOptimizationSolver(self.output_u, self.output_w, iterations)
+        self.moo_solver = MultiObjectiveOptimizationSolver(iterations)
 
     def run(self, dl, df, dr, a, p, ed):
-        u1, w1 = self.oa_controller.compute(dl, df, dr, a, p, ed)
-        u2, w2 = self.lma_controller.compute(dl, df, dr, a, p, ed)
-        u3, w3 = self.gr_controller.compute(dl, df, dr, a, p, ed)
-        self.moo_solver.set_variables(u1, u2, u3, w1, w2, w3)
-        self.lex_solver.set_variables(u1, u2, u3, w1, w2, w3)
+        u1, w1, inf11, inf12 = self.oa_controller.compute(dl, df, dr, a, p, ed)
+        u2, w2, inf21, inf22 = self.lma_controller.compute(dl, df, dr, a, p, ed)
+        u3, w3, inf31, inf32 = self.gr_controller.compute(dl, df, dr, a, p, ed)
+        self.moo_solver.set_variables(u1, u2, u3, w1, w2, w3, inf11, inf12, inf21, inf22, inf31, inf32)
+        self.lex_solver.set_variables(u1, u2, u3, w1, w2, w3, inf11, inf12, inf21, inf22, inf31, inf32)
         return self.lex_solver.solve() if self.use_lex else self.moo_solver.solve()
 
     def build_inputs(self):

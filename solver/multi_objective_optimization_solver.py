@@ -1,3 +1,4 @@
+from multiprocessing import cpu_count
 from multiprocessing.pool import Pool
 
 import numpy as np
@@ -7,18 +8,19 @@ from solver.solver import Solver
 
 
 class MultiObjectiveOptimizationSolver(Solver):
-    def __init__(self, output_u, output_w, iterations=1000):
+    def __init__(self, iterations=1000):
         super().__init__()
-        self.u_universe, self.w_universe = output_u.universe, output_w.universe
         self.iterations = iterations
         self.us = []
         self.ws = []
 
     def solve(self):
-        u_problem, w_problem = self.build_problems()
-        with Pool(2) as p:
-            u, w = p.map(self._solve, [(u_problem, self.iterations), (w_problem, self.iterations)])
         print(self.used_components)
+        u, w = self.build_problems()
+        if isinstance(u, np.float):
+            return u, w
+        with Pool(cpu_count()) as p:
+            u, w = p.map(self._solve, [(u, self.iterations), (w, self.iterations)])
         return u, w
 
     @staticmethod
@@ -26,9 +28,8 @@ class MultiObjectiveOptimizationSolver(Solver):
         problem, iterations = args
         algorithm = NSGAII(problem)
         algorithm.run(iterations)
-        result = algorithm.result[0]
-        result = result.objectives[0]
-        return result
+        feasible_solutions = [s for s in algorithm.result if s.feasible]
+        return feasible_solutions[0].objectives[0]
 
     def u_function(self, x):
         x = x[0][0]
@@ -52,9 +53,27 @@ class MultiObjectiveOptimizationSolver(Solver):
         self.us = [self.u1, self.u2, self.u3]
         self.ws = [self.w1, self.w2, self.w3]
         temp = sum(self.used_components)
+        if temp == 1:
+            return self.defuzz_not_none()
         u_problem, w_problem = Problem(1, temp), Problem(1, temp)
-        u_problem.types[:] = Subset(self.u_universe, 1)
-        w_problem.types[:] = Subset(self.w_universe, 1)
-        u_problem.directions[:] = w_problem.directions[:] = Problem.MAXIMIZE
+        u_universe, w_universe = self.universe_not_none()
+        u_problem.types[:] = Subset(u_universe, 1)
+        w_problem.types[:] = Subset(w_universe, 1)
+        u_problem.directions[:] = Problem.MAXIMIZE
+        w_problem.directions[:] = Problem.MAXIMIZE
         u_problem.function, w_problem.function = self.u_function, self.w_function
         return u_problem, w_problem
+
+    def universe_not_none(self):
+        if self.u1 is not None:
+            return self.u1.x, self.w1.x
+        if self.u2 is not None:
+            return self.u2.x, self.w2.x
+        return self.u3.x, self.w3.x
+
+    def defuzz_not_none(self):
+        if self.u1 is not None:
+            return self.inf11.defuzz(), self.inf12.defuzz()
+        if self.u2 is not None:
+            return self.inf21.defuzz(), self.inf22.defuzz()
+        return self.inf31.defuzz(), self.inf32.defuzz()

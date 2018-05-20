@@ -8,9 +8,7 @@ class FuzzyController(metaclass=ABCMeta):
     def __init__(self, input_dl, input_df, input_dr, input_a, input_p, input_ed, output_u, output_w):
         self.input_dl, self.input_df, self.input_dr, self.input_a, self.input_p, self.input_ed = input_dl, input_df, input_dr, input_a, input_p, input_ed
         self.output_u, self.output_w = output_u, output_w
-        rules = self.build_rules()
-        controller = ctrl.ControlSystem(rules)
-        self.controller = ctrl.ControlSystemSimulation(controller)
+        self.rules = self.build_rules()
 
     @abstractmethod
     def build_rules(self):
@@ -31,16 +29,22 @@ class FuzzyController(metaclass=ABCMeta):
 
     def compute(self, dl, df, dr, a, p, ed):
         temp = self.inputs(dl, df, dr, a, p, ed)
+
         if not self.validate(temp):
-            return None, None
+            return None, None, None, None
         try:
-            self.controller.inputs(temp)
-            self.controller.compute()
-            u_universe, mfu, _ = CrispValueCalculator(self.output_u, self.controller).find_memberships()
-            w_universe, mfw, _ = CrispValueCalculator(self.output_w, self.controller).find_memberships()
-            return MfMapping(u_universe, mfu), MfMapping(w_universe, mfw)
+            controller = ctrl.ControlSystem(self.rules)
+            controller = ctrl.ControlSystemSimulation(controller)
+            controller.inputs(temp)
+            controller.compute()
+            t1, t2 = CrispValueCalculator(self.output_u, controller), CrispValueCalculator(self.output_w,
+                                                                                           controller)
+            u_universe, mfu, _ = t1.find_memberships()
+            w_universe, mfw, _ = t2.find_memberships()
+            u, w = MfMapping(u_universe, mfu), MfMapping(w_universe, mfw)
+            return u, w, t1, t2
         except:
-            return None, None
+            return None, None, None, None
 
 
 class MfMapping:
