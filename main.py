@@ -2,7 +2,7 @@ from math import sqrt, atan2, cos, sin, hypot
 
 from fuzzy_controller.fuzzy_system import FuzzySystem
 
-goal_threshold = 1
+goal_threshold = 0.5
 
 
 def success(xo, yo, xd, yd):
@@ -17,7 +17,7 @@ if __name__ == '__main__':
     x, y, theta = 0, 0, 0
 
     # target position and orientation
-    x_d, y_d, theta_d = 4, 4, 0
+    x_d, y_d, theta_d = 2, 2, 0
 
     # wheel diameter
     R = 0.085
@@ -59,14 +59,12 @@ if __name__ == '__main__':
     # p = msg['p']
     # ed = msg['ed']
     degree = 10
-    radius = 0.1
     goal_reached = success(x, y, x_d, y_d)
     while not goal_reached:
         u, w = fuzzy_system.run(dl, df, dr, a, p, ed)
         theta += w
-        # u += w * radius
-        x = u * cos(theta)
-        y = u * sin(theta)
+        x += u * cos(theta)
+        y += u * sin(theta)
 
         a = round(atan2(y_d - y, x_d - x) - theta, degree)
         p_current = hypot(x_d - x, y_d - y)
