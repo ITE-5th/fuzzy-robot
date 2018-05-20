@@ -4,7 +4,7 @@ import socket
 import threading
 import time
 import traceback
-from math import sqrt, atan2, degrees, radians
+from math import atan2, degrees, radians, hypot
 
 import RPi.GPIO as GPIO
 import numpy
@@ -51,12 +51,17 @@ status = run
 # Simulation Timer
 sim_time = 60.0
 
-goal_threshold = 1
-# position
+goal_threshold = 0.5
+
 # x , y , theta
-position = {'x': 0, 'y': 0, 'theta': 0,
-            'xd': 0, 'yd': 2, 'thetaD': 0}
-loss = numpy.inf
+
+# robot position and orientation
+x, y, theta = 0, 0, 0
+
+# target position and orientation
+x_d, y_d, theta_d = 2, 2, 0
+
+dist = numpy.inf
 # range sensor value
 dl = 2.2
 df = 2.2
@@ -64,14 +69,15 @@ dr = 2.2
 
 # angle between the robot heading and the vector connecting the robot center with the target,
 # alpha in [-pi, +pi]
-alpha = atan2(position['yd'] - position['y'], position['xd'] - position['x']) - position['theta']
+alpha = atan2(y_d - y, x_d - x) - theta
 
-p = sqrt(
-    pow((position['xd'] - position['x']), 2) +
-    pow(position['yd'] - position['y'], 2))
+p = hypot(x_d - x, y_d - y)
 
 ed = p
 motor_status = STOP
+
+# calculations precision
+degree = 10
 
 
 def range_updater():
@@ -181,35 +187,55 @@ def pol2cart(rho, phi):
 
 
 def success():
-    global loss, goal_threshold, position
-    current_pos = numpy.array((position['x'], position['y'], position['theta']))
-    target_pos = numpy.array((position['xd'], position['yd'], position['thetaD']))
-    loss = numpy.linalg.norm(target_pos - current_pos)
-    is_reached = loss < goal_threshold
+    global dist, goal_threshold
+    dist = hypot(x_d - x, y_d - y)
+    is_reached = dist < goal_threshold
     return is_reached
 
 
 def update_data():
     global socket, dl, df, dr, alpha, p, ed, u, w
-    alpha = round(alpha, 2)
-    p = round(p, 2)
-    ed = round(ed, 2)
 
-    # m_dl = max(min(dl, 4), 0)
-    # m_df = max(min(df, 4), 0)
-    # m_dr = max(min(dr, 4), 0)
-    m_dl = 4
-    m_df = 4
-    m_dr = 4
+    # angle between the robot heading and the vector connecting the robot center with the target,
+    # alpha in [-pi, +pi]
+    alpha = atan2(y_d - y, x_d - x) - theta
+    alpha = atan2(y_d - y, x_d - x) - theta
+
+    # Distance from the center of the robot to the target
+    p_current = hypot(x_d - x, y_d - y)
+
+    ed = p_current - p
+    p = p_current
+
+    # take sensors current value
+
+    # current_dl = dl
+    # current_df = df
+    # current_dr = dr
+
+    current_dl = 4
+    current_df = 4
+    current_dr = 4
+    alpha = round(alpha, degree)
+    p = round(p, degree)
+    ed = round(ed, degree)
+    current_dl = round(current_dl, degree)
+    current_df = round(current_df, degree)
+    current_dr = round(current_dr, degree)
+
+    # ensure that data in fuzzy range
     alpha = max(min(alpha, 4), -4)
     p = max(min(p, 20), 0)
     ed = max(min(ed, 1), -1)
-    print(f"dl : {m_dl}  df : {m_df}  dr : {m_dr}  alpha : {alpha}  p : {p}  ed : {ed}")
+    current_dl = max(min(current_dl, 4), 0)
+    current_df = max(min(current_df, 4), 0)
+    current_dr = max(min(current_dr, 4), 0)
 
+    print(f"dl : {current_dl}  df : {current_df}  dr : {current_dr}  alpha : {alpha}  p : {p}  ed : {ed}")
     message = {
-        "dl": m_dl,
-        "df": m_df,
-        "dr": m_dr,
+        "dl": current_dl,
+        "df": current_df,
+        "dr": current_dr,
         "alpha": alpha,
         "p": p,
         "ed": ed
@@ -233,7 +259,7 @@ lr_speed = 0
 
 
 def auto_movement():
-    global position, dl, df, dr, alpha, p, ed, alpha, status, u, w, fb_speed, lr_speed
+    global x, y, theta, x_d, y_d, theta_d, dl, df, dr, p, ed, alpha, status, u, w, fb_speed, lr_speed
     print('auto movement thread is running')
     move_time = 0.5
     goal_reached = success()
@@ -255,8 +281,8 @@ def auto_movement():
                 # angular velocity
                 # degree = lr_speed * move_time / 360
 
-                position['theta'] += w  # to Radians
-                position['theta'] = position['theta'] % radians(360)
+                theta += w
+                theta = theta % radians(360)
                 lr_speed = 0
                 time.sleep(0.2)
 
@@ -266,24 +292,10 @@ def auto_movement():
                 forwards(fb_speed)
                 time.sleep(move_time)
                 stopall()
+                x, y = pol2cart(u * move_time, theta)
+                x += x
+                y += y
 
-                x, y = pol2cart(u * move_time, position['theta'])
-                position['x'] += x
-                position['y'] += y
-
-            # Distance from the center of the robot to the target
-            p_current = sqrt(
-                pow((position['xd'] - position['x']), 2) +
-                pow(position['yd'] - position['y'], 2))
-
-            # angle between the robot heading and the vector connecting the robot center with the target,
-            # alpha in [-pi, +pi]
-            alpha = atan2(position['yd'] - position['y'], position['xd'] - position['x']) - position['theta']
-
-            ed = p_current - p
-            p = p_current
-            # print(p_current)
-            # print(alpha)
             # print_status(position, fb_speed, lr_speed, dl, df, dr)
             goal_reached = success()
         except Exception as e:
@@ -296,7 +308,6 @@ def auto_movement():
 
 
 def print_status():
-    global position, fb_speed, lr_speed, dl, df, dr, ed, p
     while status == run:
         os.system('clear')
         print('******************************')
@@ -304,14 +315,14 @@ def print_status():
         print('******************************')
         print('alpha is : {} \ned is : {}\np is : {} '.format(alpha, ed, p))
         print('******************************')
-        print('current Position is :{},{},{}'.format(position['x'], position['y'], degrees(position['theta'])))
+        print('current Position is :{},{},{}'.format(x, y, degrees(theta)))
         print('******************************')
-        print('Destination Position is :{},{},{}'.format(position['xd'], position['yd'], position['thetaD']))
+        print('Destination Position is :{},{},{}'.format(x_d, y_d, theta_d))
         print('******************************')
         print('Distance L:{} F:{} R:{}'.format(dl, df, dr))
         print('******************************')
-        print('Loss is :{}'.format(loss))
-        if loss < goal_threshold:
+        print('dist is :{}'.format(dist))
+        if dist < goal_threshold:
             print('***********************GOAL***REACHED***************************************')
             print('***********************GOAL***REACHED***************************************')
             print('***********************GOAL***REACHED***************************************')
