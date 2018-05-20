@@ -5,9 +5,9 @@ from fuzzy_controller.fuzzy_system import FuzzySystem
 goal_threshold = 0.5
 
 
-def success(xo, yo, xd, yd):
+def success(xo, yo, xd, yd, alpha):
     dist = hypot(xd - xo, yd - yo)
-    return dist < goal_threshold
+    return dist <= goal_threshold
 
 
 if __name__ == '__main__':
@@ -17,7 +17,7 @@ if __name__ == '__main__':
     x, y, theta = 0, 0, 0
 
     # target position and orientation
-    x_d, y_d, theta_d = 2, 2, 0
+    x_d, y_d, theta_d = 4, 4, 0
 
     # wheel diameter
     R = 0.085
@@ -59,7 +59,7 @@ if __name__ == '__main__':
     # p = msg['p']
     # ed = msg['ed']
     degree = 10
-    goal_reached = success(x, y, x_d, y_d)
+    goal_reached = success(x, y, x_d, y_d, a)
     while not goal_reached:
         u, w = fuzzy_system.run(dl, df, dr, a, p, ed)
         theta += w
@@ -73,6 +73,6 @@ if __name__ == '__main__':
         print(f"u = {round(u,degree)}, w = {round(w,degree)}")
         print(
             f"position is : x:{round(x,degree)},y:{round(y,degree)}, theta = {round(theta, degree)},alpha:{round(a,degree)}")
-        goal_reached = success(x, y, x_d, y_d)
+        goal_reached = success(x, y, x_d, y_d, a)
     if goal_reached:
         print('GOAL REACHED')
