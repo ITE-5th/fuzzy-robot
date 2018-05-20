@@ -60,7 +60,7 @@ class UltraSonicSensors:
         self.sensor_count = len(self.range_sensors)
 
     def update(self):
-        temp = float('Inf')
+        temp = 200
         self.range_sensors[0].trigger()
         for rs in self.range_sensors:
             time.sleep(0.01)

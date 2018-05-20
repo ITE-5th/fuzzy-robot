@@ -17,7 +17,7 @@ if __name__ == '__main__':
     x, y, theta = 0, 0, 0
 
     # target position and orientation
-    x_d, y_d, theta_d = 2, 2, 0
+    x_d, y_d, theta_d = 3, 3, 0
 
     # wheel diameter
     R = 0.085
@@ -50,7 +50,6 @@ if __name__ == '__main__':
     # a = max(min(a, 4), -4)
     p = max(min(p, 20), 0)
     ed = max(min(ed, 1), -1)
-    print(f"dl:{dl}, df:{df}, dr:{dr}, a:{a}, p:{p}, ed:{ed}")
     # msg = {'dl': 1.21, 'df': 1.51, 'dr': 1.22, 'alpha': 0.0, 'p': 2.0, 'ed': 1}
     # dl = msg['dl']
     # df = msg['df']
@@ -61,6 +60,7 @@ if __name__ == '__main__':
     degree = 10
     goal_reached = success(x, y, x_d, y_d)
     while not goal_reached:
+        print(f"dl:{dl}, df:{df}, dr:{dr}, a:{a}, p:{p}, ed:{ed}")
         u, w = fuzzy_system.run(dl, df, dr, a, p, ed)
         theta += w
         x += u * cos(theta)
@@ -71,7 +71,10 @@ if __name__ == '__main__':
         ed = round(p_current - p, degree)
         p = round(p_current, degree)
         print(f"u = {round(u,degree)}, w = {round(w,degree)}")
-        print(f"position is : x:{round(x,degree)},y:{round(y,degree)}, theta = {round(theta, degree)},alpha:{round(a,degree)}")
+        print(
+            f"position is : x:{round(x,degree)},"
+            f"y:{round(y,degree)}, theta = {round(theta, degree)},"
+            f"alpha:{round(a,degree)}")
         goal_reached = success(x, y, x_d, y_d)
     if goal_reached:
         print('GOAL REACHED')

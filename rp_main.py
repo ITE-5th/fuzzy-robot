@@ -4,10 +4,9 @@ import socket
 import threading
 import time
 import traceback
-from math import atan2, degrees, radians, hypot
+from math import atan2, degrees, hypot, cos, sin
 
 import RPi.GPIO as GPIO
-import numpy
 # start  pigpiod service
 # os.system('sudo pigpiod')
 import pigpio
@@ -59,9 +58,9 @@ goal_threshold = 0.5
 x, y, theta = 0, 0, 0
 
 # target position and orientation
-x_d, y_d, theta_d = 2, 2, 0
+x_d, y_d, theta_d = 3, 3, 0
 
-dist = numpy.inf
+dist = 9999
 # range sensor value
 dl = 2.2
 df = 2.2
@@ -71,8 +70,7 @@ dr = 2.2
 # alpha in [-pi, +pi]
 alpha = atan2(y_d - y, x_d - x) - theta
 
-p = hypot(x_d - x, y_d - y)
-
+p = 0
 ed = p
 motor_status = STOP
 
@@ -181,16 +179,15 @@ def map(value, istart, istop, ostart, ostop):
 
 
 def pol2cart(rho, phi):
-    x = rho * numpy.cos(phi)
-    y = rho * numpy.sin(phi)
+    x = rho * cos(phi)
+    y = rho * sin(phi)
     return x, y
 
 
 def success():
     global dist, goal_threshold
     dist = hypot(x_d - x, y_d - y)
-    is_reached = dist < goal_threshold
-    return is_reached
+    return dist < goal_threshold
 
 
 def update_data():
@@ -198,7 +195,6 @@ def update_data():
 
     # angle between the robot heading and the vector connecting the robot center with the target,
     # alpha in [-pi, +pi]
-    alpha = atan2(y_d - y, x_d - x) - theta
     alpha = atan2(y_d - y, x_d - x) - theta
 
     # Distance from the center of the robot to the target
@@ -216,6 +212,7 @@ def update_data():
     current_dl = 4
     current_df = 4
     current_dr = 4
+
     alpha = round(alpha, degree)
     p = round(p, degree)
     ed = round(ed, degree)
@@ -261,7 +258,7 @@ lr_speed = 0
 def auto_movement():
     global x, y, theta, x_d, y_d, theta_d, dl, df, dr, p, ed, alpha, status, u, w, fb_speed, lr_speed
     print('auto movement thread is running')
-    move_time = 0.5
+    move_time = 1
     goal_reached = success()
     while status == run and not goal_reached:
         try:
@@ -276,13 +273,12 @@ def auto_movement():
                     turnleft(100)
                 elif lr_speed < 0:
                     turnright(100)
-                time.sleep(lr_speed)
+                time.sleep(abs(lr_speed))
                 stopall()
                 # angular velocity
-                # degree = lr_speed * move_time / 360
+                # a_degree = lr_speed * move_time / 360
 
                 theta += w
-                theta = theta % radians(360)
                 lr_speed = 0
                 time.sleep(0.2)
 
@@ -292,9 +288,9 @@ def auto_movement():
                 forwards(fb_speed)
                 time.sleep(move_time)
                 stopall()
-                x, y = pol2cart(u * move_time, theta)
-                x += x
-                y += y
+                x_new, y_new = pol2cart(u * move_time, theta)
+                x += x_new
+                y += y_new
 
             # print_status(position, fb_speed, lr_speed, dl, df, dr)
             goal_reached = success()
