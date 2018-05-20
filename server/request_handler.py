@@ -43,6 +43,9 @@ class RequestHandler:
             elif method == "simple":
                 self.fuzzy_system = SimpleFuzzySystem()
             self.method = method
+            ConnectionHelper.send_json(client_socket, {
+                "method": method
+            })
             while True:
                 message = ConnectionHelper.receive_json(client_socket)
                 if message is None:

@@ -75,6 +75,7 @@ p = sqrt(
 
 ed = p
 motor_status = STOP
+first_time = True
 
 
 def range_updater():
@@ -195,7 +196,7 @@ def success():
 
 
 def update_data():
-    global socket, dl, df, dr, alpha, p, ed, u, w, angle
+    global socket, dl, df, dr, alpha, p, ed, u, w, angle, first_time, method
     alpha = round(alpha, 2)
     p = round(p, 2)
     ed = round(ed, 2)
@@ -203,6 +204,13 @@ def update_data():
     # m_dl = max(min(dl, 4), 0)
     # m_df = max(min(df, 4), 0)
     # m_dr = max(min(dr, 4), 0)
+    if first_time:
+        message = {
+            "method": method
+        }
+        ConnectionHelper.send_json(socket, message)
+        ConnectionHelper.receive_json(socket)
+        first_time = False
     m_dl = 4
     m_df = 4
     m_dr = 4
