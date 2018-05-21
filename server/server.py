@@ -19,7 +19,7 @@ class LocalServer:
         self.client_socket, self.address = None, None
 
     def handle_client_connection(self, client_socket):
-        handler = RequestHandler(self.use_lex)
+        handler = RequestHandler()
         handler.start(client_socket)
 
     def start(self):
