@@ -318,8 +318,8 @@ def auto_movement():
                 x += x_new
                 y += y_new
 
-             # print_status(position, fb_speed, lr_speed, dl, df, dr)
-             goal_reached = success()
+            # print_status(position, fb_speed, lr_speed, dl, df, dr)
+            goal_reached = success()
         except Exception as e:
             print(e)
             print(traceback.format_exc())
