@@ -17,7 +17,7 @@ class SimpleFuzzySystem(FuzzySystem):
 
     def run(self, values: dict):
         try:
-            values = {f"input_{k}": v for k, v in values.items()}
+            values = {f"input_{k}": v for k, v in values.items() if k != "velocity"}
             controller = ctrl.ControlSystem(self.rules)
             controller = ctrl.ControlSystemSimulation(controller)
             controller.inputs(values)
