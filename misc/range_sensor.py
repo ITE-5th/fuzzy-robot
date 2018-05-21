@@ -60,7 +60,7 @@ class UltraSonicSensors:
         self.sensor_count = len(self.range_sensors)
 
     def update(self):
-        temp = 200
+        temp = 400
         self.range_sensors[0].trigger()
         for rs in self.range_sensors:
             time.sleep(0.01)
@@ -68,7 +68,7 @@ class UltraSonicSensors:
             distance, is_new = rs.get_centimetres()
             # print(distance)
 
-            if is_new and temp > distance > 1:
+            if temp > distance > 1:
                 temp = distance
         return temp
 

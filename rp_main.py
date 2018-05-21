@@ -60,7 +60,7 @@ goal_threshold = 0.5
 x, y, theta = 0, 0, 0
 
 # target position and orientation
-x_d, y_d, theta_d = 3, 3, 0
+x_d, y_d, theta_d = 2, 0, 0
 
 dist = 9999
 # range sensor value
@@ -79,7 +79,7 @@ motor_status = STOP
 first_time = True
 
 # calculations precision
-degree = 10
+degree = 2
 
 
 def range_updater():
@@ -218,13 +218,13 @@ def update_data():
 
     # take sensors current value
 
-    # current_dl = dl
-    # current_df = df
-    # current_dr = dr
+    current_dl = dl
+    current_df = df
+    current_dr = dr
 
-    current_dl = 4
-    current_df = 4
-    current_dr = 4
+    # current_dl = 4
+    # current_df = 4
+    # current_dr = 4
 
     alpha = round(alpha, degree)
     p = round(p, degree)
@@ -280,34 +280,31 @@ def auto_movement():
     goal_reached = success()
     while status == run and not goal_reached:
         try:
-            fb_speed = 0
             # communicate with server
             update_data()
             if method == "moo":
-                if w is not None:
+
+                if w is not None and w != 0:
+                    degree_per_second = 375
                     # lr_speed = int(map(w, -5, 5, -100, 100))
-                    lr_speed = degrees(w) / 300
+                    lr_speed = round(abs(degrees(w) / degree_per_second), 2)
                     print('LR {} '.format(lr_speed))
-                    if lr_speed > 0:
+                    if w > 0:
                         turnleft(100)
-                    elif lr_speed < 0:
+                    elif w < 0:
                         turnright(100)
-                    time.sleep(abs(lr_speed))
+                    time.sleep(lr_speed)
                     stopall()
                     # angular velocity
                     # a_degree = lr_speed * move_time / 360
-
                     theta += w
-                    lr_speed = 0
                     time.sleep(0.2)
-
-                if u is not None:
-                    fb_speed = int(map(u, 0, 1, 0, 100))
-                    print('forward {} '.format(fb_speed))
-                    forwards(fb_speed)
-                    time.sleep(move_time)
+                if u is not None and u != 0:
+                    forwards(100)
+                    time.sleep(move_time * u)
                     stopall()
-                    x_new, y_new = pol2cart(u * move_time, theta)
+                    meter_per_second = 1.1
+                    x_new, y_new = pol2cart(u * move_time * meter_per_second, theta)
                     x += x_new
                     y += y_new
             else:
@@ -315,7 +312,6 @@ def auto_movement():
                 x_new, y_new = pol2cart(u * move_time, theta)
                 x += x_new
                 y += y_new
-
             # print_status(position, fb_speed, lr_speed, dl, df, dr)
             goal_reached = success()
         except Exception as e:

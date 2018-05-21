@@ -60,10 +60,14 @@ if __name__ == '__main__':
     # x.move_forward()
     # x.move_backward()
     # time.sleep(0.5)
+
+
+
+    time.sleep(55)
     x.move_forward(100)
     time.sleep(1)
     x.stopall()
-    time.sleep(1)
+    time.sleep(3)
 
     x.move_left(100)
     time.sleep(1)
