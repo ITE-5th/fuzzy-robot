@@ -35,7 +35,7 @@ class SimpleFuzzySystem(FuzzySystem):
             ctrl.Rule(self.input_front['far'], self.output_angle['front']),
             # the second rule
             ctrl.Rule(self.input_front['close'] & self.input_right["far"], self.output_velocity['fast']),
-            ctrl.Rule(self.input_front['close'] & self.input_right["far"], self.output_angle['front']),
+            ctrl.Rule(self.input_front['close'] & self.input_right["far"], self.output_angle['right']),
             # the third rule
             ctrl.Rule(self.input_front['close'] & self.input_right["close"] & self.input_left["far"],
                       self.output_velocity['fast']),
@@ -87,8 +87,8 @@ class SimpleFuzzySystem(FuzzySystem):
         output_velocity = self.tri_pi_tri(output_velocity, "stop", [70, 85, 100, 100])
 
         output_angle["left"] = trimf(output_angle.universe, [-90, -90, 25])
-        output_angle["right"] = trimf(output_angle.universe, [-25, 0, 25])
-        output_angle["front"] = trimf(output_angle.universe, [-25, 90, 90])
+        output_angle["front"] = trimf(output_angle.universe, [-25, 0, 25])
+        output_angle["right"] = trimf(output_angle.universe, [-25, 90, 90])
 
         return output_velocity, output_angle
 
