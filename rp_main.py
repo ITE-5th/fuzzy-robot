@@ -273,7 +273,7 @@ lr_speed = 0
 def auto_movement():
     global x, y, theta, x_d, y_d, theta_d, dl, df, dr, p, ed, alpha, status, u, w, fb_speed, lr_speed, angle
     print('auto movement thread is running')
-    move_time = 1
+    move_time = 0.2
     goal_reached = success()
     while status == run and not goal_reached:
         try:
@@ -296,7 +296,7 @@ def auto_movement():
                 time.sleep(0.2)
             if angle is not None and angle != 0:
                 degree_per_second = 375
-                lr_speed = round(abs(angle / degree_per_second), 2)
+                lr_speed = round(abs(degrees(angle) / degree_per_second), 2)
                 print('LR {} '.format(lr_speed))
                 if angle > 0:
                     turnleft(100)
@@ -310,14 +310,17 @@ def auto_movement():
                 time.sleep(0.2)
 
             if u is not None and u != 0:
-                forwards(100)
-                time.sleep(move_time * u)
+                if method == 'simple':
+                    forwards(u)
+                    time.sleep(move_time)
+                else:
+                    forwards(100)
+                    time.sleep(move_time * u)
                 stopall()
                 meter_per_second = 1.1
                 x_new, y_new = pol2cart(u * move_time * meter_per_second, theta)
                 x += x_new
                 y += y_new
-
             # print_status(position, fb_speed, lr_speed, dl, df, dr)
             goal_reached = success()
         except Exception as e:

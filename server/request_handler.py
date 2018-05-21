@@ -21,10 +21,15 @@ class RequestHandler:
             }
         elif self.method == "simple":
             front, left, right, velocity = message["df"], message["dl"], message["dr"], message["velocity"]
+            front = min(max(front * 50, 0), 70)
+            left = min(max(left * 50, 0), 70)
+            right = min(max(right * 50, 0), 70)
+
+            print(f'front : {front},left:{left},right:{right}')
             values = {
-                "front": front * 100,
-                "left": left * 100,
-                "right": right * 100,
+                "front": front,
+                "left": left,
+                "right": right,
                 "velocity": velocity
             }
             velocity, angle = self.fuzzy_system.run(values)
@@ -37,6 +42,7 @@ class RequestHandler:
     def start(self, client_socket):
         try:
             message = ConnectionHelper.receive_json(client_socket)
+            print(f"received message: {message}")
             method = message["method"].lower()
             if method == "moo":
                 self.fuzzy_system = MooFuzzySystem(False)

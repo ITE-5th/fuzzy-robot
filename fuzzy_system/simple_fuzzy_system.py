@@ -1,3 +1,5 @@
+import traceback
+
 import numpy as np
 import skfuzzy.control as ctrl
 from skfuzzy import fuzzy_or, trimf, pimf
@@ -9,9 +11,9 @@ class SimpleFuzzySystem(FuzzySystem):
 
     def __init__(self, step=0.01):
         self.step = step
-        self.rules = self.build_rules()
         self.input_front, self.input_left, self.input_right, self.input_velocity = self.build_inputs()
         self.output_velocity, self.output_angle = self.build_outputs()
+        self.rules = self.build_rules()
 
     def run(self, values: dict):
         try:
@@ -21,7 +23,9 @@ class SimpleFuzzySystem(FuzzySystem):
             controller.inputs(values)
             controller.compute()
             return controller.output["output_velocity"], controller.output["output_angle"]
-        except:
+        except Exception as e:
+            print(e)
+            print(traceback.format_exc())
             return 50, 0
 
     def build_rules(self):
