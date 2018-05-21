@@ -266,9 +266,6 @@ def update_data():
         angle = result["angle"]
 
 
-u = 0
-w = 0
-
 fb_speed = 0
 lr_speed = 0
 
@@ -282,38 +279,47 @@ def auto_movement():
         try:
             # communicate with server
             update_data()
-            if method == "moo":
+            if w is not None and w != 0:
+                degree_per_second = 375
+                # lr_speed = int(map(w, -5, 5, -100, 100))
+                lr_speed = round(abs(degrees(w) / degree_per_second), 2)
+                print('LR {} '.format(lr_speed))
+                if w > 0:
+                    turnleft(100)
+                elif w < 0:
+                    turnright(100)
+                time.sleep(lr_speed)
+                stopall()
+                # angular velocity
+                # a_degree = lr_speed * move_time / 360
+                theta += w
+                time.sleep(0.2)
+            if angle is not None and angle != 0:
+                degree_per_second = 375
+                lr_speed = round(abs(angle / degree_per_second), 2)
+                print('LR {} '.format(lr_speed))
+                if angle > 0:
+                    turnleft(100)
+                elif angle < 0:
+                    turnright(100)
+                time.sleep(lr_speed)
+                stopall()
+                # angular velocity
+                # a_degree = lr_speed * move_time / 360
+                theta += angle
+                time.sleep(0.2)
 
-                if w is not None and w != 0:
-                    degree_per_second = 375
-                    # lr_speed = int(map(w, -5, 5, -100, 100))
-                    lr_speed = round(abs(degrees(w) / degree_per_second), 2)
-                    print('LR {} '.format(lr_speed))
-                    if w > 0:
-                        turnleft(100)
-                    elif w < 0:
-                        turnright(100)
-                    time.sleep(lr_speed)
-                    stopall()
-                    # angular velocity
-                    # a_degree = lr_speed * move_time / 360
-                    theta += w
-                    time.sleep(0.2)
-                if u is not None and u != 0:
-                    forwards(100)
-                    time.sleep(move_time * u)
-                    stopall()
-                    meter_per_second = 1.1
-                    x_new, y_new = pol2cart(u * move_time * meter_per_second, theta)
-                    x += x_new
-                    y += y_new
-            else:
-                # simple
-                x_new, y_new = pol2cart(u * move_time, theta)
+            if u is not None and u != 0:
+                forwards(100)
+                time.sleep(move_time * u)
+                stopall()
+                meter_per_second = 1.1
+                x_new, y_new = pol2cart(u * move_time * meter_per_second, theta)
                 x += x_new
                 y += y_new
-            # print_status(position, fb_speed, lr_speed, dl, df, dr)
-            goal_reached = success()
+
+             # print_status(position, fb_speed, lr_speed, dl, df, dr)
+             goal_reached = success()
         except Exception as e:
             print(e)
             print(traceback.format_exc())

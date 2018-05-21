@@ -1,7 +1,7 @@
 from math import sqrt, atan2, cos, sin, hypot
-from random import random
 
-from fuzzy_controller.fuzzy_system import FuzzySystem
+from fuzzy_system.fuzzy_system import FuzzySystem
+from fuzzy_system.moo_fuzzy_system import MooFuzzySystem
 
 goal_threshold = 0.5
 
@@ -44,7 +44,7 @@ if __name__ == '__main__':
     # dr = min(d[0], d[1], d[2])
     # df = min(d[3], d[4])
     # dl = min(d[5], d[6], d[7])
-    fuzzy_system = FuzzySystem(False)
+    fuzzy_system = MooFuzzySystem(False)
     dl = 4
     df = 4
     dr = 4
@@ -52,11 +52,11 @@ if __name__ == '__main__':
     p = max(min(p, 20), 0)
     ed = max(min(ed, 1), -1)
     # msg = {'dl': 1.21, 'df': 1.51, 'dr': 1.22, 'alpha': 0.0, 'p': 2.0, 'ed': 1}
-    msg = {'dl': 0.35, 'df': 0.53, 'dr': 1.35, 'alpha': -2.05, 'p': 1.53, 'ed': 0.14}
+    msg = {'dl': 0.35, 'df': 0.53, 'dr': 1.35, 'a': -2.05, 'p': 1.53, 'ed': 0.14}
     dl = msg['dl']
     df = msg['df']
     dr = msg['dr']
-    a = msg['alpha']
+    a = msg['a']
     p = msg['p']
     ed = msg['ed']
     degree = 10
@@ -66,7 +66,7 @@ if __name__ == '__main__':
         # dl = round(random() * 4, 2)
         # dr = round(random() * 4, 2)
         # df = round(random() * 4, 2)
-        u, w = fuzzy_system.run(dl, df, dr, a, p, ed)
+        u, w = fuzzy_system.run(msg)
         theta += w
         x += u * cos(theta)
         y += u * sin(theta)
