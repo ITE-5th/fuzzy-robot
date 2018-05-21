@@ -1,13 +1,14 @@
-from math import sqrt, atan2, cos, sin, hypot
+from math import sqrt, atan2, cos, sin, hypot, radians
 
-from fuzzy_controller.fuzzy_system import FuzzySystem
+from fuzzy_system.moo_fuzzy_system import MooFuzzySystem
+from fuzzy_system.simple_fuzzy_system import SimpleFuzzySystem
 
 goal_threshold = 0.5
 
 
-def success(xo, yo, xd, yd):
+def success(xo, yo, xd, yd, alpha):
     dist = hypot(xd - xo, yd - yo)
-    return dist < goal_threshold
+    return dist <= goal_threshold
 
 
 if __name__ == '__main__':
@@ -17,7 +18,7 @@ if __name__ == '__main__':
     x, y, theta = 0, 0, 0
 
     # target position and orientation
-    x_d, y_d, theta_d = 3, 3, 0
+    x_d, y_d, theta_d = 4, 4, 0
 
     # wheel diameter
     R = 0.085
@@ -43,13 +44,19 @@ if __name__ == '__main__':
     # dr = min(d[0], d[1], d[2])
     # df = min(d[3], d[4])
     # dl = min(d[5], d[6], d[7])
-    fuzzy_system = FuzzySystem(False)
+    moo = False
+    if moo:
+        fuzzy_system = MooFuzzySystem(False)
+    else:
+        fuzzy_system = SimpleFuzzySystem()
     dl = 4
     df = 4
     dr = 4
+    u, w = 0, 0
     # a = max(min(a, 4), -4)
     p = max(min(p, 20), 0)
     ed = max(min(ed, 1), -1)
+    velocity = 0
     # msg = {'dl': 1.21, 'df': 1.51, 'dr': 1.22, 'alpha': 0.0, 'p': 2.0, 'ed': 1}
     # dl = msg['dl']
     # df = msg['df']
@@ -58,23 +65,41 @@ if __name__ == '__main__':
     # p = msg['p']
     # ed = msg['ed']
     degree = 10
-    goal_reached = success(x, y, x_d, y_d)
+    goal_reached = success(x, y, x_d, y_d, a)
     while not goal_reached:
-        print(f"dl:{dl}, df:{df}, dr:{dr}, a:{a}, p:{p}, ed:{ed}")
-        u, w = fuzzy_system.run(dl, df, dr, a, p, ed)
-        theta += w
-        x += u * cos(theta)
-        y += u * sin(theta)
+        if moo:
+            values = {
+                "dl": dl,
+                "df": df,
+                "dr": dr,
+                "a": a,
+                "p": p,
+                "ed": ed
+            }
+            u, w = fuzzy_system.run(values)
+            theta += w
+            x += u * cos(theta)
+            y += u * sin(theta)
 
-        a = round(atan2(y_d - y, x_d - x) - theta, degree)
-        p_current = hypot(x_d - x, y_d - y)
-        ed = round(p_current - p, degree)
-        p = round(p_current, degree)
-        print(f"u = {round(u,degree)}, w = {round(w,degree)}")
-        print(
-            f"position is : x:{round(x,degree)},"
-            f"y:{round(y,degree)}, theta = {round(theta, degree)},"
-            f"alpha:{round(a,degree)}")
-        goal_reached = success(x, y, x_d, y_d)
-    if goal_reached:
+            a = round(atan2(y_d - y, x_d - x) - theta, degree)
+            p_current = hypot(x_d - x, y_d - y)
+            ed = round(p_current - p, degree)
+            p = round(p_current, degree)
+            print(f"u = {round(u,degree)}, w = {round(w,degree)}")
+            print(
+                f"position is : x:{round(x,degree)},y:{round(y,degree)}, theta = {round(theta, degree)},alpha:{round(a,degree)}")
+            goal_reached = success(x, y, x_d, y_d, a)
+        else:
+            values = {
+                "front": df * 100,
+                "left": dl * 100,
+                "right": dr * 100,
+                "velocity": u
+            }
+            u, angle = fuzzy_system.run(values)
+            angle = radians(angle)
+            x += u * cos(angle)
+            y += u * sin(angle)
+
+    if goal_reached and moo:
         print('GOAL REACHED')

@@ -2,14 +2,15 @@ import numpy as np
 import skfuzzy.control as ctrl
 from skfuzzy.membership import *
 
-from fuzzy_controller.goal_reaching_controller import GoalReachingController
-from fuzzy_controller.local_minimum_avoidance_controller import LocalMinimumAvoidanceController
-from fuzzy_controller.obstacle_avoidance_controller import ObstacleAvoidanceController
+from fuzzy_system.fuzzy_system import FuzzySystem
+from fuzzy_system.goal_reaching_controller import GoalReachingController
+from fuzzy_system.local_minimum_avoidance_controller import LocalMinimumAvoidanceController
+from fuzzy_system.obstacle_avoidance_controller import ObstacleAvoidanceController
 from solver.lexicographic_solver import LexicographicSolver
 from solver.multi_objective_optimization_solver import MultiObjectiveOptimizationSolver
 
 
-class FuzzySystem:
+class MooFuzzySystem(FuzzySystem):
     def __init__(self, use_lex, step=0.001, iterations=1000):
         self.step = step
         self.use_lex = use_lex
@@ -27,7 +28,8 @@ class FuzzySystem:
         self.lex_solver = LexicographicSolver()
         self.moo_solver = MultiObjectiveOptimizationSolver(iterations)
 
-    def run(self, dl, df, dr, a, p, ed):
+    def run(self, values: dict):
+        dl, df, dr, a, p, ed = values["dl"], values["df"], values["dr"], values["a"], values["p"], values["ed"]
         u1, w1, inf11, inf12 = self.oa_controller.compute(dl, df, dr, a, p, ed)
         u2, w2, inf21, inf22 = self.lma_controller.compute(dl, df, dr, a, p, ed)
         u3, w3, inf31, inf32 = self.gr_controller.compute(dl, df, dr, a, p, ed)

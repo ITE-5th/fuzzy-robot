@@ -4,7 +4,7 @@ import skfuzzy.control as ctrl
 from skfuzzy.control.controlsystem import CrispValueCalculator
 
 
-class FuzzyController(metaclass=ABCMeta):
+class MooFuzzyController(metaclass=ABCMeta):
     def __init__(self, input_dl, input_df, input_dr, input_a, input_p, input_ed, output_u, output_w):
         self.input_dl, self.input_df, self.input_dr, self.input_a, self.input_p, self.input_ed = input_dl, input_df, input_dr, input_a, input_p, input_ed
         self.output_u, self.output_w = output_u, output_w
@@ -29,7 +29,6 @@ class FuzzyController(metaclass=ABCMeta):
 
     def compute(self, dl, df, dr, a, p, ed):
         temp = self.inputs(dl, df, dr, a, p, ed)
-
         if not self.validate(temp):
             return None, None, None, None
         try:
@@ -41,7 +40,7 @@ class FuzzyController(metaclass=ABCMeta):
                                                                                            controller)
             u_universe, mfu, _ = t1.find_memberships()
             w_universe, mfw, _ = t2.find_memberships()
-            u, w = MfMapping(u_universe, mfu), MfMapping(w_universe, mfw)
+            u, w = MfMapping(self.output_u.universe, mfu), MfMapping(self.output_w.universe, mfw)
             return u, w, t1, t2
         except:
             return None, None, None, None
