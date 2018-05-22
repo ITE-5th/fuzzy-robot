@@ -21,9 +21,9 @@ class RequestHandler:
             }
         elif self.method == "simple":
             front, left, right, velocity = message["df"], message["dl"], message["dr"], message["velocity"]
-            front = min(max(front * 50, 0), 70)
-            left = min(max(left * 50, 0), 70)
-            right = min(max(right * 50, 0), 70)
+            front = min(max(front, 0), 70)
+            left = min(max(left, 0), 70)
+            right = min(max(right, 0), 70)
 
             print(f'front : {front},left:{left},right:{right}')
             values = {
@@ -33,7 +33,7 @@ class RequestHandler:
                 "velocity": velocity
             }
             velocity, angle = self.fuzzy_system.run(values)
-            angle = radians(angle)
+            # angle = radians(angle)
             return {
                 "velocity": velocity,
                 "angle": angle
