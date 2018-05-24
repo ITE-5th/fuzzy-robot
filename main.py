@@ -51,14 +51,8 @@ if __name__ == '__main__':
     # a = max(min(a, 4), -4)
     p = max(min(p, 20), 0)
     ed = max(min(ed, 1), -1)
-    # msg = {'dl': 1.21, 'df': 1.51, 'dr': 1.22, 'alpha': 0.0, 'p': 2.0, 'ed': 1}
-    msg = {'dl': 0.35, 'df': 0.53, 'dr': 1.35, 'a': -2.05, 'p': 1.53, 'ed': 0.14}
-    dl = msg['dl']
-    df = msg['df']
-    dr = msg['dr']
-    a = msg['a']
-    p = msg['p']
-    ed = msg['ed']
+    msg = {'dl': 1.21, 'df': 1.51, 'dr': 1.22, 'alpha': 0.0, 'p': 2.0, 'ed': 1}
+
     degree = 10
     goal_reached = success(x, y, x_d, y_d)
     while not goal_reached:

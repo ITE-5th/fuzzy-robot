@@ -1,6 +1,7 @@
 from abc import ABCMeta, abstractmethod
 
 import skfuzzy.control as ctrl
+from skfuzzy import fuzzy_or
 from skfuzzy.control.controlsystem import CrispValueCalculator
 
 
@@ -36,14 +37,26 @@ class MooFuzzyController(metaclass=ABCMeta):
             controller = ctrl.ControlSystemSimulation(controller)
             controller.inputs(temp)
             controller.compute()
-            t1, t2 = CrispValueCalculator(self.output_u, controller), CrispValueCalculator(self.output_w,
-                                                                                           controller)
-            u_universe, mfu, _ = t1.find_memberships()
-            w_universe, mfw, _ = t2.find_memberships()
-            u, w = MfMapping(self.output_u.universe, mfu), MfMapping(self.output_w.universe, mfw)
+            u, t1 = self.get_consequent_membership_function(self.output_u, controller)
+            w, t2 = self.get_consequent_membership_function(self.output_w, controller)
             return u, w, t1, t2
         except:
             return None, None, None, None
+
+    @staticmethod
+    def get_consequent_membership_function(consequent: ctrl.Consequent, controller):
+        # t = CrispValueCalculator(consequent, controller)
+        # _, mfx, _ = t.find_memberships()
+        # y = MfMapping(consequent.universe, mfx)
+        # return y, t
+        terms = list(consequent.terms.keys())
+        universe = consequent.universe
+        _, result, _ = CrispValueCalculator(consequent[terms[0]], controller)
+        for i in range(1, len(terms)):
+            term = terms[i]
+            _, temp, _ = CrispValueCalculator(consequent[term], controller)
+            _, result = fuzzy_or(universe, result, universe, temp)
+        return MfMapping(universe, result), CrispValueCalculator(consequent, controller)
 
 
 class MfMapping:

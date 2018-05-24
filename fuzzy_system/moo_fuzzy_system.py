@@ -75,6 +75,7 @@ class MooFuzzySystem(FuzzySystem):
     def build_outputs(self):
         output_u = ctrl.Consequent(np.arange(0, 2, self.step), "output_u")  # m/s
         output_w = ctrl.Consequent(np.arange(-5, 5, self.step), "output_w")  # rad/s
+        output_w.terms.values()
 
         output_u["S"] = zmf(output_u.universe, 0.16, 0.6)
         output_u["M"] = gaussmf(output_u.universe, 0.5, 0.12)

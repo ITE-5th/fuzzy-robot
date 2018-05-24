@@ -1,9 +1,8 @@
-from math import radians
-
 from fuzzy_system.moo_fuzzy_system import MooFuzzySystem
 from fuzzy_system.simple_fuzzy_system import SimpleFuzzySystem
 from misc.connection_helper import ConnectionHelper
 
+from skfuzzy.control import controlsystem
 
 class RequestHandler:
     def __init__(self):
