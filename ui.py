@@ -49,9 +49,9 @@ class Ui(QtWidgets.QMainWindow, FormClass):
         x, y, theta = 0, 0, 0
 
         # target position and orientation
-        # x_d.y_d, theta_d = 5, 0, 0
-        x_d, y_d, theta_d = 0, 5, 0
-        # x_d, y_d, theta_d = 5, 5, 0
+        x_d, y_d, theta = 5, 0, 0
+        # x_d, y_d, theta = 0, 5, 0
+        # x_d, y_d, theta = 5, 5, 0
         # Distance from the center of the robot to the target, in [0, 20]
         p = hypot(x_d - x, y_d - y)
         prev_p = 0
