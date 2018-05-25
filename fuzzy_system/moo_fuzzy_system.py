@@ -1,5 +1,6 @@
 import numpy as np
 import skfuzzy.control as ctrl
+from skfuzzy import fuzzy_or
 from skfuzzy.membership import *
 
 from fuzzy_system.fuzzy_system import FuzzySystem
@@ -29,7 +30,7 @@ class MooFuzzySystem(FuzzySystem):
         self.moo_solver = MultiObjectiveOptimizationSolver(iterations)
 
     def run(self, values: dict):
-        dl, df, dr, a, p, ed = values["dl"], values["df"], values["dr"], values["a"], values["p"], values["ed"]
+        dl, df, dr, a, p, ed = values["dl"], values["df"], values["dr"], values["alpha"], values["p"], values["ed"]
         u1, w1, inf11, inf12 = self.oa_controller.compute(dl, df, dr, a, p, ed)
         u2, w2, inf21, inf22 = self.lma_controller.compute(dl, df, dr, a, p, ed)
         u3, w3, inf31, inf32 = self.gr_controller.compute(dl, df, dr, a, p, ed)
@@ -74,8 +75,8 @@ class MooFuzzySystem(FuzzySystem):
 
     def build_outputs(self):
         output_u = ctrl.Consequent(np.arange(0, 2, self.step), "output_u")  # m/s
-        output_w = ctrl.Consequent(np.arange(-5, 5, self.step), "output_w")  # rad/s
-        output_w.terms.values()
+        output_w = ctrl.Consequent(np.arange(-4, 4, self.step), "output_w")  # rad/s
+        # output_w.terms.values()
 
         output_u["S"] = zmf(output_u.universe, 0.16, 0.6)
         output_u["M"] = gaussmf(output_u.universe, 0.5, 0.12)

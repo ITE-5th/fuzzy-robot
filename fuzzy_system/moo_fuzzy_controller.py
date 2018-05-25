@@ -1,5 +1,7 @@
 from abc import ABCMeta, abstractmethod
 
+import matplotlib.pyplot as plt
+import numpy as np
 import skfuzzy.control as ctrl
 from skfuzzy import fuzzy_or
 from skfuzzy.control.controlsystem import CrispValueCalculator
@@ -37,18 +39,14 @@ class MooFuzzyController(metaclass=ABCMeta):
             controller = ctrl.ControlSystemSimulation(controller)
             controller.inputs(temp)
             controller.compute()
-            u, t1 = self.get_consequent_membership_function(self.output_u, controller)
-            w, t2 = self.get_consequent_membership_function(self.output_w, controller)
+            u, t1 = self.get_consequent_membership_function2(self.output_u, controller)
+            w, t2 = self.get_consequent_membership_function2(self.output_w, controller)
             return u, w, t1, t2
         except:
             return None, None, None, None
 
     @staticmethod
     def get_consequent_membership_function(consequent: ctrl.Consequent, controller):
-        # t = CrispValueCalculator(consequent, controller)
-        # _, mfx, _ = t.find_memberships()
-        # y = MfMapping(consequent.universe, mfx)
-        # return y, t
         terms = list(consequent.terms.keys())
         universe = consequent.universe
         _, result, _ = CrispValueCalculator(consequent[terms[0]], controller)
@@ -57,6 +55,18 @@ class MooFuzzyController(metaclass=ABCMeta):
             _, temp, _ = CrispValueCalculator(consequent[term], controller)
             _, result = fuzzy_or(universe, result, universe, temp)
         return MfMapping(universe, result), CrispValueCalculator(consequent, controller)
+
+    @staticmethod
+    def get_consequent_membership_function2(consequent: ctrl.Consequent, controller):
+        t = CrispValueCalculator(consequent, controller)
+        x, mfx, _ = t.find_memberships()
+        y = MfMapping(x, mfx)
+        return y, t
+
+    @staticmethod
+    def draw(ar):
+        plt.scatter(np.arange(0, len(ar)), ar)
+        plt.show()
 
 
 class MfMapping:
@@ -67,9 +77,17 @@ class MfMapping:
         self.mfx_indices = {t: i for i, t in enumerate(self.mfx)}
 
     def find_mfx(self, x):
+        x = self.find_nearest(self.x, x)
         temp = self.x_indices[x]
         return self.mfx[temp]
 
     def find_x(self, mfx):
+        mfx = self.find_nearest(self.mfx, mfx)
         temp = self.mfx_indices[mfx]
         return self.x[temp]
+
+    @staticmethod
+    def find_nearest(array, value):
+        array = np.asarray(array)
+        idx = (np.abs(array - value)).argmin()
+        return array[idx]

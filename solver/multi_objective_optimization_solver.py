@@ -15,7 +15,7 @@ class MultiObjectiveOptimizationSolver(Solver):
         self.ws = []
 
     def solve(self):
-        print(self.used_components)
+        # print(self.used_components)
         u, w = self.build_problems()
         if isinstance(u, np.float):
             return u, w
@@ -72,8 +72,9 @@ class MultiObjectiveOptimizationSolver(Solver):
         return self.u3.x, self.w3.x
 
     def defuzz_not_none(self):
-        if self.u1 is not None:
+        if self.u1 is not None and self.used_components[0]:
             return self.inf11.defuzz(), self.inf12.defuzz()
-        if self.u2 is not None:
+        if self.u2 is not None and self.used_components[1]:
             return self.inf21.defuzz(), self.inf22.defuzz()
+        # return self.inf31.sim.output['output_u'], self.inf31.sim.output['output_w']
         return self.inf31.defuzz(), self.inf32.defuzz()

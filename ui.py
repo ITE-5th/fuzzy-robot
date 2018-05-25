@@ -44,17 +44,15 @@ class Ui(QtWidgets.QMainWindow, FormClass):
         return dist < Ui.goal_threshold
 
     def solve(self):
-        step = 0.001
         # robot position and orientation
         x, y, theta = 0, 0, 0
 
         # target position and orientation
-        x_d, y_d, theta = 5, 0, 0
-        # x_d, y_d, theta = 0, 5, 0
-        # x_d, y_d, theta = 5, 5, 0
+        # x_d, y_d, theta = -10, 0, 0
+        # x_d, y_d, theta = 0, -10, 0
+        x_d, y_d, theta = -10, -10, 0
         # Distance from the center of the robot to the target, in [0, 20]
         p = hypot(x_d - x, y_d - y)
-        prev_p = 0
 
         # angle between the robot heading and the vector connecting the robot center with the target, alpha in [-pi, +pi]
         a = atan2(y_d - y, x_d - x) - theta
@@ -80,6 +78,16 @@ class Ui(QtWidgets.QMainWindow, FormClass):
         degree = 10
         goal_reached = self.success(x, y, x_d, y_d)
 
+        print(
+            f"x:{round(x,degree)}, "
+            f"y:{round(y,degree)}, "
+            # f"t = {round(atan2(y_d - y, x_d - x), degree)}, "
+            f"theta = {round(theta, degree)}, "
+            f"alpha:{round(a,degree)}, "
+            f"p: {msg['p']}, "
+            f"ed: {msg['ed']}, "
+        )
+
         self.show_solution([x, y], [x_d, y_d])
         while not goal_reached:
             # print(f"dl:{msg['dl']}, df:{msg['df']}, dr:{msg['dr']}, a:{msg['alpha']}, p:{msg['p']}, ed:{msg['ed']}")
@@ -90,7 +98,7 @@ class Ui(QtWidgets.QMainWindow, FormClass):
             print(f"u: {u}, w: {w}")
 
             theta += w
-            theta = ((-theta + np.pi) % (2.0 * np.pi) - np.pi) * -1.0
+            # theta = ((-theta + np.pi) % (2.0 * np.pi) - np.pi) * -1.0
 
             x += u * cos(theta)
             y += u * sin(theta)
