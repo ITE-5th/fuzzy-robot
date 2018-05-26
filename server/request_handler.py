@@ -2,7 +2,6 @@ from fuzzy_system.moo_fuzzy_system import MooFuzzySystem
 from fuzzy_system.simple_fuzzy_system import SimpleFuzzySystem
 from misc.connection_helper import ConnectionHelper
 
-from skfuzzy.control import controlsystem
 
 class RequestHandler:
     def __init__(self):
@@ -11,9 +10,7 @@ class RequestHandler:
 
     def handle_message(self, message):
         if self.method == "moo":
-            dl, df, dr, a, p, ed = message["dl"], message["df"], message["dr"], message["alpha"], message["p"], message[
-                "ed"]
-            u, w = self.fuzzy_system.run(dl, df, dr, a, p, ed)
+            u, w = self.fuzzy_system.run(message)
             return {
                 "u": round(u, 4),
                 "w": round(w, 4)
@@ -44,7 +41,7 @@ class RequestHandler:
             print(f"received message: {message}")
             method = message["method"].lower()
             if method == "moo":
-                self.fuzzy_system = MooFuzzySystem(False)
+                self.fuzzy_system = MooFuzzySystem(True)
             elif method == "simple":
                 self.fuzzy_system = SimpleFuzzySystem()
             self.method = method

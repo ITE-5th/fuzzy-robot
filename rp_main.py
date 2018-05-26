@@ -1,4 +1,5 @@
 import argparse
+import math
 import os
 import socket
 import threading
@@ -42,7 +43,7 @@ l_range_sensors_pins = {
 
 }
 
-method = "simple"
+method = "moo"
 
 run = 'Running'
 STOP = 'Stopped'
@@ -60,7 +61,7 @@ goal_threshold = 0.5
 x, y, theta = 0, 0, 0
 
 # target position and orientation
-x_d, y_d, theta_d = 2, 0, 0
+x_d, y_d, theta_d = 0, 0, 0
 
 dist = 9999
 # range sensor value
@@ -189,11 +190,9 @@ def pol2cart(rho, phi):
 
 
 def success():
-    if method == "moo":
-        global dist, goal_threshold
-        dist = hypot(x_d - x, y_d - y)
-        return dist < goal_threshold
-    return False
+    global dist, goal_threshold
+    dist = hypot(x_d - x, y_d - y)
+    return dist < goal_threshold
 
 
 def update_data():
@@ -209,6 +208,7 @@ def update_data():
     # angle between the robot heading and the vector connecting the robot center with the target,
     # alpha in [-pi, +pi]
     alpha = atan2(y_d - y, x_d - x) - theta
+    alpha = ((-alpha + math.pi) % (2.0 * math.pi) - math.pi) * -1.0
 
     # Distance from the center of the robot to the target
     p_current = hypot(x_d - x, y_d - y)
@@ -273,7 +273,7 @@ lr_speed = 0
 def auto_movement():
     global x, y, theta, x_d, y_d, theta_d, dl, df, dr, p, ed, alpha, status, u, w, fb_speed, lr_speed, angle
     print('auto movement thread is running')
-    move_time = 0
+    move_time = 0.2
     goal_reached = success()
     while status == run and not goal_reached:
         try:
@@ -281,6 +281,7 @@ def auto_movement():
             update_data()
             if w is not None and w != 0:
                 degree_per_second = 375
+                w = w * move_time
                 # lr_speed = int(map(w, -5, 5, -100, 100))
                 lr_speed = round(abs(degrees(w) / degree_per_second), 2)
                 print('LR {} '.format(lr_speed))
@@ -294,29 +295,10 @@ def auto_movement():
                 # a_degree = lr_speed * move_time / 360
                 theta += w
                 time.sleep(0.2)
-            if angle is not None and angle != 0:
-                degree_per_second = 375
-                lr_speed = round(abs(degrees(angle) / degree_per_second), 2)
-                print('LR {} '.format(lr_speed))
-                if angle > 0:
-                    turnleft(100)
-                elif angle < 0:
-                    turnright(100)
-                time.sleep(lr_speed)
-                stopall()
-                # angular velocity
-                # a_degree = lr_speed * move_time / 360
-                theta += angle
-                time.sleep(0.2)
-
             if u is not None and u != 0:
-                if method == 'simple':
-                    forwards(u)
-                    time.sleep(move_time)
-                else:
-                    forwards(100)
-                    time.sleep(move_time * u)
-                # stopall()
+                forwards(100)
+                time.sleep(move_time * u)
+                stopall()
                 meter_per_second = 1.1
                 x_new, y_new = pol2cart(u * move_time * meter_per_second, theta)
                 x += x_new
@@ -372,12 +354,13 @@ if __name__ == '__main__':
     try:
 
         parser = argparse.ArgumentParser()
-        parser.add_argument('--host', type=str,
-                            default='192.168.1.4')
-        parser.add_argument('--port', type=int,
-                            default=8888)
-
+        parser.add_argument('--host', type=str)
+        parser.add_argument('--port', type=int, default=8888)
+        parser.add_argument('--xd', type=int, default=0)
+        parser.add_argument('--yd', type=int, default=0)
         arguments = parser.parse_args()
+        x_d = arguments.xd
+        y_d = arguments.yd
 
         try:
             socket.connect((arguments.host, arguments.port))
