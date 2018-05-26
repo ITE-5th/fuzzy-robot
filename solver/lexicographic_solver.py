@@ -71,15 +71,15 @@ class LexicographicSolver(Solver):
             mfx2 = ar.mfx
             ind2 = LexicographicSolver.max2(mfx2, ind1)
             if len(ind2) == 1:
-                return ar.x[ind2[0]]
-                # return ar.find_x(mfx2[ind2])
+                # return ar.x[ind2[0]]
+                return ar.find_x(mfx2[ind2])
 
             ind1 = ind2
 
         temp = []
         for i in ind2:
-            x = ar.x[i]
-            # x = ar.find_x(mfx2[i])
+            # x = ar.x[i]
+            x = ar.find_x(mfx2[i])
             # x = ar.find_x(i)
             temp.append(x)
 
