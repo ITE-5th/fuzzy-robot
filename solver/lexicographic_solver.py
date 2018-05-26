@@ -29,8 +29,20 @@ class LexicographicSolver(Solver):
 
         return self.u3.find_x(u3), self.w3.find_x(w3)
 
+    def defuzz_not_none(self):
+        if self.u1 is not None and self.used_components[0]:
+            return self.inf11.defuzz(), self.inf12.defuzz()
+        if self.u2 is not None and self.used_components[1]:
+            return self.inf21.defuzz(), self.inf22.defuzz()
+        # return self.inf31.sim.output['output_u'], self.inf31.sim.output['output_w']
+        return self.inf31.defuzz(), self.inf32.defuzz()
+
     def solve(self):
         print(self.used_components)
+
+        temp = sum(self.used_components)
+        if temp == 1:
+            return self.defuzz_not_none()
 
         # u1: lm, u2: oa, u3: gr
         # if self.u1 is None or self.u2 is None or self.u3 is None:
