@@ -43,7 +43,7 @@ class LexicographicSolver(Solver):
         LexicographicSolver.append(u, self.u3)
 
         u = LexicographicSolver.unify_length2(u)
-        u = self._solve(u)
+        u = self._solve(u, u=True)
 
         w = []
         LexicographicSolver.append(w, self.w1)
@@ -51,7 +51,7 @@ class LexicographicSolver(Solver):
         LexicographicSolver.append(w, self.w3)
         w = LexicographicSolver.unify_length2(w)
 
-        w = self._solve(w)
+        w = self._solve(w, u=False)
 
         return u, w
 
@@ -62,7 +62,7 @@ class LexicographicSolver(Solver):
         return t
 
     @staticmethod
-    def _solve(arrays):
+    def _solve(arrays, u=False):
 
         mfx1 = arrays[0].mfx
         ind1 = LexicographicSolver.max1(mfx1)
@@ -71,16 +71,20 @@ class LexicographicSolver(Solver):
             mfx2 = ar.mfx
             ind2 = LexicographicSolver.max2(mfx2, ind1)
             if len(ind2) == 1:
-                return ar.find_x(mfx2[ind2])
+                return ar.x[ind2[0]]
+                # return ar.find_x(mfx2[ind2])
 
             ind1 = ind2
 
         temp = []
         for i in ind2:
-            x = ar.find_x(i)
+            x = ar.x[i]
+            # x = ar.find_x(mfx2[i])
+            # x = ar.find_x(i)
             temp.append(x)
 
-        return sorted(temp)[-1]
+        temp1 = sorted(temp)
+        return temp1[-1] if u else temp[0]
 
     @staticmethod
     def _solve2(t1, t2, t3):
