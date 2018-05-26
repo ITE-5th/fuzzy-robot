@@ -48,9 +48,9 @@ class Ui(QtWidgets.QMainWindow, FormClass):
         x, y, theta = 0, 0, 0
 
         # target position and orientation
-        x_d, y_d, theta = -10, 0, 0
+        # x_d, y_d, theta = -10, 0, 0
         # x_d, y_d, theta = 0, -10, 0
-        # x_d, y_d, theta = -10, -10, 0
+        x_d, y_d, theta = 10, 15, 1.5
         # Distance from the center of the robot to the target, in [0, 20]
         p = hypot(x_d - x, y_d - y)
 
@@ -72,7 +72,7 @@ class Ui(QtWidgets.QMainWindow, FormClass):
         p = max(min(p, 20), 0)
         ed = max(min(ed, 1), -1)
 
-        dl, df, dr = 3.2, .2, 3.2
+        dl, df, dr = 0.2, 0.2, 3.2
         # msg = {'dl': 1.21, 'df': 1.51, 'dr': 1.22, 'alpha': 0.0, 'p': 2.0, 'ed': 1}
         msg = {'dl': dl, 'df': df, 'dr': dr, 'alpha': a, 'p': p, 'ed': ed}
 
@@ -101,7 +101,7 @@ class Ui(QtWidgets.QMainWindow, FormClass):
             print(f"u: {u}, w: {w}")
 
             theta += w
-            # theta = ((-theta + np.pi) % (2.0 * np.pi) - np.pi) * -1.0
+            theta = ((-theta + np.pi) % (2.0 * np.pi) - np.pi) * -1.0
 
             x += u * cos(theta)
             y += u * sin(theta)

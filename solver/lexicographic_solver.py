@@ -30,6 +30,8 @@ class LexicographicSolver(Solver):
         return self.u3.find_x(u3), self.w3.find_x(w3)
 
     def solve(self):
+        print(self.used_components)
+
         # u1: lm, u2: oa, u3: gr
         # if self.u1 is None or self.u2 is None or self.u3 is None:
         #     print(f"{self.u1}, {self.u2}, {self.u3}")

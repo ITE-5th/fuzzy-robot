@@ -15,7 +15,7 @@ class MultiObjectiveOptimizationSolver(Solver):
         self.ws = []
 
     def solve(self):
-        # print(self.used_components)
+        print(self.used_components)
         u, w = self.build_problems()
         if isinstance(u, np.float):
             return u, w

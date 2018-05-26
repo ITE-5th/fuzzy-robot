@@ -21,8 +21,10 @@ class ObstacleAvoidanceController(MooFuzzyController):
 
     def build_rules(self):
         return [
-            ctrl.Rule(self.input_dl['N'] & self.input_df['N'] & self.input_dr['F'], self.output_u['S']),
-            ctrl.Rule(self.input_dl['N'] & self.input_df['N'] & self.input_dr['F'], self.output_w['PO']),
+            ctrl.Rule(self.input_dl['N'] & self.input_df['F'] & self.input_dr['N'], self.output_u['M']),
+            ctrl.Rule(self.input_dl['N'] & self.input_df['F'] & self.input_dr['N'], self.output_w['ZO']),
+            # ctrl.Rule(self.input_dl['N'] & self.input_df['N'] & self.input_dr['F'], self.output_u['S']),
+            # ctrl.Rule(self.input_dl['N'] & self.input_df['N'] & self.input_dr['F'], self.output_w['PO']),
             ctrl.Rule(self.input_dl['F'] & self.input_df['N'] & self.input_dr['N'], self.output_u['M']),
             ctrl.Rule(self.input_dl['F'] & self.input_df['N'] & self.input_dr['N'], self.output_w['PO']),
             ctrl.Rule(self.input_dl['M'] & self.input_df['N'] & self.input_dr['N'], self.output_u['M']),
