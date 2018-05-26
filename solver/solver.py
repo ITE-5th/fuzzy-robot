@@ -13,6 +13,7 @@ class Solver(metaclass=ABCMeta):
         # TODO: Remove this line when activating all problems
         # self.used_components = [False, False, True]
         # self.used_components = [True, False, False]
+        # self.used_components = [True, False, True]
 
     @abstractmethod
     def solve(self):

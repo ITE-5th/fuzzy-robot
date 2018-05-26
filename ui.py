@@ -72,7 +72,7 @@ class Ui(QtWidgets.QMainWindow, FormClass):
         p = max(min(p, 20), 0)
         ed = max(min(ed, 1), -1)
 
-        dl, df, dr = .25, 3.2, .9
+        dl, df, dr = .9, .9, .2
         # dl, df, dr = 0.2, 0.2, 0.9
         denominator = 2
         # msg = {'dl': 1.21, 'df': 1.51, 'dr': 1.22, 'alpha': 0.0, 'p': 2.0, 'ed': 1}

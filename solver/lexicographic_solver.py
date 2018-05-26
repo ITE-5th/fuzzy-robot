@@ -50,16 +50,16 @@ class LexicographicSolver(Solver):
         # u = self._solve(self.u2, self.u1, self.u3)
         # w = self._solve(self.w2, self.w1, self.w3)
         u = []
-        LexicographicSolver.append(u, self.u1)
         LexicographicSolver.append(u, self.u2)
+        LexicographicSolver.append(u, self.u1)
         LexicographicSolver.append(u, self.u3)
 
         u = LexicographicSolver.unify_length2(u)
         u = self._solve(u, u=True)
 
         w = []
-        LexicographicSolver.append(w, self.w1)
         LexicographicSolver.append(w, self.w2)
+        LexicographicSolver.append(w, self.w1)
         LexicographicSolver.append(w, self.w3)
         w = LexicographicSolver.unify_length2(w)
 
