@@ -11,7 +11,7 @@ class Solver(metaclass=ABCMeta):
         self.used_components = [self.u1 is not None, self.u2 is not None, self.u3 is not None]
 
         # TODO: Remove this line when activating all problems
-        self.used_components = [False, False, True]
+        # self.used_components = [False, False, True]
 
     @abstractmethod
     def solve(self):

@@ -12,6 +12,8 @@ class MooFuzzyController(metaclass=ABCMeta):
         self.input_dl, self.input_df, self.input_dr, self.input_a, self.input_p, self.input_ed = input_dl, input_df, input_dr, input_a, input_p, input_ed
         self.output_u, self.output_w = output_u, output_w
         self.rules = self.build_rules()
+        self.controller = ctrl.ControlSystem(self.rules)
+        self.controller = ctrl.ControlSystemSimulation(self.controller)
 
     @abstractmethod
     def build_rules(self):
@@ -35,12 +37,10 @@ class MooFuzzyController(metaclass=ABCMeta):
         if not self.validate(temp):
             return None, None, None, None
         try:
-            controller = ctrl.ControlSystem(self.rules)
-            controller = ctrl.ControlSystemSimulation(controller)
-            controller.inputs(temp)
-            controller.compute()
-            u, t1 = self.get_consequent_membership_function2(self.output_u, controller)
-            w, t2 = self.get_consequent_membership_function2(self.output_w, controller)
+            self.controller.inputs(temp)
+            self.controller.compute()
+            u, t1 = self.get_consequent_membership_function2(self.output_u, self.controller)
+            w, t2 = self.get_consequent_membership_function2(self.output_w, self.controller)
             return u, w, t1, t2
         except:
             return None, None, None, None

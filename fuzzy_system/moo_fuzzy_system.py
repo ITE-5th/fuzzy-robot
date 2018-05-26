@@ -1,6 +1,5 @@
 import numpy as np
 import skfuzzy.control as ctrl
-from skfuzzy import fuzzy_or
 from skfuzzy.membership import *
 
 from fuzzy_system.fuzzy_system import FuzzySystem
@@ -34,6 +33,7 @@ class MooFuzzySystem(FuzzySystem):
         u1, w1, inf11, inf12 = self.oa_controller.compute(dl, df, dr, a, p, ed)
         u2, w2, inf21, inf22 = self.lma_controller.compute(dl, df, dr, a, p, ed)
         u3, w3, inf31, inf32 = self.gr_controller.compute(dl, df, dr, a, p, ed)
+
         self.moo_solver.set_variables(u1, u2, u3, w1, w2, w3, inf11, inf12, inf21, inf22, inf31, inf32)
         self.lex_solver.set_variables(u1, u2, u3, w1, w2, w3, inf11, inf12, inf21, inf22, inf31, inf32)
         return self.lex_solver.solve() if self.use_lex else self.moo_solver.solve()
@@ -82,6 +82,11 @@ class MooFuzzySystem(FuzzySystem):
         output_u["M"] = gaussmf(output_u.universe, 0.5, 0.12)
         output_u["L"] = smf(output_u.universe, 0.42, 0.95)
 
+        # output_w["LNO"] = zmf(output_w.universe, -math.pi, -math.pi/2)
+        # output_w["NO"] = gaussmf(output_w.universe, -math.pi/2, 0.6)
+        # output_w["ZO"] = gaussmf(output_w.universe, 0, 0.15)
+        # output_w["PO"] = gaussmf(output_w.universe, math.pi/2, 0.6)
+        # output_w["LPO"] = smf(output_w.universe, math.pi/2, math.pi)
         output_w["LNO"] = zmf(output_w.universe, -4, -1.5)
         output_w["NO"] = gaussmf(output_w.universe, -1.8, 0.6)
         output_w["ZO"] = gaussmf(output_w.universe, 0.1, 0.2)
