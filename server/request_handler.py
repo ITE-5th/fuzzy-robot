@@ -41,7 +41,7 @@ class RequestHandler:
             print(f"received message: {message}")
             method = message["method"].lower()
             if method == "moo":
-                self.fuzzy_system = MooFuzzySystem(False)
+                self.fuzzy_system = MooFuzzySystem(use_lex=False)
             elif method == "simple":
                 self.fuzzy_system = SimpleFuzzySystem()
             self.method = method

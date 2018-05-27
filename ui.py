@@ -45,7 +45,7 @@ class Ui(QtWidgets.QMainWindow, FormClass):
 
     def solve(self):
         # robot position and orientation
-        x, y, theta = 0, 0, 0
+        x, y, theta = 0, 0, 1.6
 
         # target position and orientation
         # x_d, y_d, theta = -10, 0, 0
