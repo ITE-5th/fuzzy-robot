@@ -41,7 +41,7 @@ if __name__ == '__main__':
     # dr = min(d[0], d[1], d[2])
     # df = min(d[3], d[4])
     # dl = min(d[5], d[6], d[7])
-    fuzzy_system = MooFuzzySystem(False)
+    fuzzy_system = MooFuzzySystem(True)
     dl = 4
     df = 4
     dr = 4

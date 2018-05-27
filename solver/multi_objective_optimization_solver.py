@@ -20,16 +20,16 @@ class MultiObjectiveOptimizationSolver(Solver):
         if isinstance(u, np.float):
             return u, w
         with Pool(cpu_count()) as p:
-            u, w = p.map(self._solve, [(u, self.iterations), (w, self.iterations)])
+            u, w = p.map(self._solve, [(u, self.iterations, True), (w, self.iterations, False)])
         return u, w
 
     @staticmethod
     def _solve(args):
-        problem, iterations = args
+        problem, iterations, use_max = args
         algorithm = NSGAII(problem)
         algorithm.run(iterations)
-        feasible_solutions = [s for s in algorithm.result if s.feasible]
-        return feasible_solutions[0].objectives[0]
+        feasible_solutions = [s.objectives[0] for s in algorithm.result if s.feasible]
+        return max(feasible_solutions) if use_max else min(feasible_solutions)
 
     def u_function(self, x):
         x = x[0][0]

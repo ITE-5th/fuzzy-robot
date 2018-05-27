@@ -34,7 +34,7 @@ class Ui(QtWidgets.QMainWindow, FormClass):
         self.plotWidget.hideAxis(axis='left')
         self.plotWidget.hideAxis(axis='bottom')
 
-        self.fuzzy_system = MooFuzzySystem(True)
+        self.fuzzy_system = MooFuzzySystem(False)
         self.pixel_map = QtGui.QPixmap("city.png")
         self.image_scale = 0.02
 
@@ -50,7 +50,7 @@ class Ui(QtWidgets.QMainWindow, FormClass):
         # target position and orientation
         # x_d, y_d, theta = -10, 0, 0
         # x_d, y_d, theta = 0, -10, 0
-        x_d, y_d, theta = 10, 15, 0
+        x_d, y_d, theta = -10, -10, 0
         # Distance from the center of the robot to the target, in [0, 20]
         p = hypot(x_d - x, y_d - y)
 
@@ -72,7 +72,8 @@ class Ui(QtWidgets.QMainWindow, FormClass):
         p = max(min(p, 20), 0)
         ed = max(min(ed, 1), -1)
 
-        dl, df, dr = .9, .9, .2
+        # dl, df, dr = .9, .9, .2
+        dl, df, dr = 4, 4, 4
         # dl, df, dr = 0.2, 0.2, 0.9
         denominator = 2
         # msg = {'dl': 1.21, 'df': 1.51, 'dr': 1.22, 'alpha': 0.0, 'p': 2.0, 'ed': 1}
